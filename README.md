@@ -1,4 +1,5 @@
-# bun-react-tailwind-shadcn-template
+# Note it!
+Note it! is a notes taking app that is meant to have the flexability needed for any software engineering job. The hope is it can be used for a wide variety of projects, topics, lists, or even designing. Some examples include creating todo lists, creating diagrams of existing architecture, allowing you to embed notes within diagrams in a compact way, and more!
 
 To install dependencies:
 

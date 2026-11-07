@@ -23,7 +23,7 @@
     "noImplicitOverride": true,
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/frontend/*"]
     },
 
     // Some stricter flags (disabled by default)
