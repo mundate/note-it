@@ -1,10 +1,18 @@
 import { serve } from "bun";
 import index from "../frontend/index.html";
+import { openDb } from "./db";
+import { todoRoutes } from "./todoRoutes";
+import { createTodoRepo } from "./todos";
+
+const db = openDb();
+const todos = createTodoRepo(db);
 
 const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
+
+    ...todoRoutes(todos),
 
     "/api/hello": {
       async GET(req) {

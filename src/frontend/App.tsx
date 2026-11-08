@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { House, ListTodo, Network, NotebookPen, Settings } from "lucide-react";
 import { useState } from "react";
 import { APITester } from "./APITester";
+import { TodoList } from "./todos/TodoList";
 import "./index.css";
 
 import logo from "./logo.svg";
@@ -24,7 +25,7 @@ export function App() {
     <div className="flex min-h-screen">
       <Sidebar items={NAV_ITEMS} activeId={activeId} onSelect={setActiveId} />
       <main className="relative z-10 min-w-0 flex-1 p-8">
-        {active.id === "home" ? <Home /> : <Placeholder title={active.label} />}
+        {active.id === "home" ? <Home /> : active.id === "todos" ? <TodoList /> : <Placeholder title={active.label} />}
       </main>
     </div>
   );
