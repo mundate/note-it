@@ -1,0 +1,1 @@
+Read my PLANNING.md file to get an idea of things I care about

@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TODO_TEXT_MAX, type Todo, type TodoPatch } from "@shared/todo";
+import { TODO_TEXT_MAX, type Todo, type TodoPatch } from "../api/client";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { todoApi } from "./api";

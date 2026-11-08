@@ -4,11 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/backend/index.ts",
-    "start": "NODE_ENV=production bun src/backend/index.ts",
-    "build": "bun run build.ts"
+    "postinstall": "bun install --cwd tools/openapi-gen",
+    "dev": "bun run gen:api && bun scripts/dev.ts",
+    "dev:web": "bun --hot src/dev.ts",
+    "dev:api": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "gen:api": "cd backend && uv run python -m app.export_openapi && cd ../tools/openapi-gen && bun run gen",
+    "check:api": "bun run gen:api && git diff --exit-code -- src/frontend/api",
+    "build": "bun run gen:api && bun run build.ts",
+    "start": "bun run build && cd backend && uv run uvicorn app.main:app --port 8000",
+    "test": "cd backend && uv run pytest && cd .. && bunx tsc --noEmit"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6",
+    "@dnd-kit/modifiers": "^9",
+    "@dnd-kit/sortable": "^10",
+    "@dnd-kit/utilities": "^3",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
@@ -16,15 +26,16 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1",
+    "openapi-fetch": "^0.14",
     "react": "^19",
     "react-dom": "^19",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest",
     "tailwindcss": "^4.1.11"
   },
   "peerDependencies": {
