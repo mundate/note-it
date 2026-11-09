@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
@@ -95,6 +96,10 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <div className={cn("border-t border-sidebar-border p-3", collapsed && "flex justify-center")}>
+        <ThemeToggle compact={collapsed} />
+      </div>
     </aside>
   );
 }
