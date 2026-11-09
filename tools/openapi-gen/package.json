@@ -1,10 +1,10 @@
 {
   "name": "openapi-gen",
   "private": true,
-  "description": "Generates src/frontend/api/schema.d.ts from the FastAPI OpenAPI schema. Kept separate because openapi-typescript needs the TypeScript 5 compiler API, while the app uses TypeScript 7.",
+  "description": "Generates frontend/api/schema.d.ts from the FastAPI OpenAPI schema. Kept separate because openapi-typescript needs the TypeScript 5 compiler API, while the app uses TypeScript 7.",
   "type": "module",
   "scripts": {
-    "gen": "openapi-typescript ../../src/frontend/api/openapi.json -o ../../src/frontend/api/schema.d.ts"
+    "gen": "openapi-typescript ../../frontend/api/openapi.json -o ../../frontend/api/schema.d.ts"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0",

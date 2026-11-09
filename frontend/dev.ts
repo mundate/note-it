@@ -4,7 +4,7 @@
  * Production doesn't use this: FastAPI serves the built `dist/` itself.
  */
 import { serve } from "bun";
-import index from "./frontend/index.html";
+import index from "./index.html";
 
 const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000";
 

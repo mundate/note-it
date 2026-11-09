@@ -6,10 +6,10 @@
   "scripts": {
     "postinstall": "bun install --cwd tools/openapi-gen",
     "dev": "bun run gen:api && bun scripts/dev.ts",
-    "dev:web": "bun --hot src/dev.ts",
+    "dev:web": "bun --hot frontend/dev.ts",
     "dev:api": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
     "gen:api": "cd backend && uv run python -m app.export_openapi && cd ../tools/openapi-gen && bun run gen",
-    "check:api": "bun run gen:api && git diff --exit-code -- src/frontend/api",
+    "check:api": "bun run gen:api && git diff --exit-code -- frontend/api",
     "build": "bun run gen:api && bun run build.ts",
     "start": "bun run build && cd backend && uv run uvicorn app.main:app --port 8000",
     "test": "cd backend && uv run pytest && cd .. && bunx tsc --noEmit"

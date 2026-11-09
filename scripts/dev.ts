@@ -14,7 +14,7 @@ const children: Subprocess[] = [
     stdout: "inherit",
     stderr: "inherit",
   }),
-  spawn(["bun", "--hot", "src/dev.ts"], {
+  spawn(["bun", "--hot", "frontend/dev.ts"], {
     cwd: root,
     env: { ...process.env, API_URL: `http://127.0.0.1:${API_PORT}` },
     stdout: "inherit",

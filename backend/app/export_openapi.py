@@ -10,7 +10,7 @@ from pathlib import Path
 from .db import REPO_ROOT
 from .main import create_app
 
-DEFAULT_OUTPUT = REPO_ROOT / "src" / "frontend" / "api" / "openapi.json"
+DEFAULT_OUTPUT = REPO_ROOT / "frontend" / "api" / "openapi.json"
 
 
 def main() -> None:

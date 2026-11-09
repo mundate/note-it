@@ -3,9 +3,9 @@ Note it! is a notes taking app that is meant to have the flexability needed for 
 
 ## Stack
 
-- **Frontend:** React + Tailwind in `src/frontend/`, bundled by [Bun](https://bun.com).
+- **Frontend:** React + Tailwind in `frontend/`, bundled by [Bun](https://bun.com).
 - **Backend:** [FastAPI](https://fastapi.tiangolo.com) in `backend/`, storing data in SQLite (`data/note-it.sqlite`).
-- **API types:** generated from the backend. `src/frontend/api/openapi.json` and `schema.d.ts` are produced by `bun run gen:api`; don't edit them by hand.
+- **API types:** generated from the backend. `frontend/api/openapi.json` and `schema.d.ts` are produced by `bun run gen:api`; don't edit them by hand.
 
 Requires [Bun](https://bun.com) and [uv](https://docs.astral.sh/uv/).
 
