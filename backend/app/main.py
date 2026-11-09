@@ -1,31 +1,24 @@
 """FastAPI app. Run with: uv run uvicorn app.main:app --reload (from backend/)."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .db import DEFAULT_DB_PATH, REPO_ROOT, open_db
+from .exceptions import register_exception_handlers
 from .routes import router as todos_router
 from .todos import TodoRepo
 
 DIST_DIR = REPO_ROOT / "dist"
 
 
-def _validation_message(exc: RequestValidationError) -> str:
-    err = exc.errors()[0]
-    field = ".".join(str(p) for p in err["loc"][1:] if p != "body")
-    msg = str(err["msg"]).removeprefix("Value error, ")
-    return f"`{field}`: {msg}" if field and not msg.startswith("`") else msg
-
-
 def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         # Opened here (not at import) so exporting the OpenAPI schema has no side effects.
         db = open_db(db_path)
         app.state.todos = TodoRepo(db)
@@ -41,16 +34,7 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     )
 
     # All errors use one shape: {"error": "..."}, documented as ErrorResponse.
-    @app.exception_handler(RequestValidationError)
-    async def on_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-        # A malformed path id (e.g. /api/todos/abc) is just a todo that doesn't exist.
-        if any(e["loc"][0] == "path" for e in exc.errors()):
-            return JSONResponse({"error": "Todo not found"}, status_code=404)
-        return JSONResponse({"error": _validation_message(exc)}, status_code=400)
-
-    @app.exception_handler(StarletteHTTPException)
-    async def on_http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        return JSONResponse({"error": exc.detail}, status_code=exc.status_code, headers=exc.headers)
+    register_exception_handlers(app)
 
     app.include_router(todos_router)
 

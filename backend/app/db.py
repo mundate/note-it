@@ -2,7 +2,7 @@
 
 import os
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -40,7 +40,7 @@ def open_db(path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
 
 
 @contextmanager
-def transaction(db: sqlite3.Connection) -> Iterator[None]:
+def transaction(db: sqlite3.Connection) -> Generator[None]:
     db.execute("BEGIN")
     try:
         yield
