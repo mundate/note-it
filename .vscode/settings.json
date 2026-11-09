@@ -1,0 +1,13 @@
+{
+  // The Python project lives in backend/, so point VS Code at its uv-managed venv.
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+
+  // Let Pylance resolve `from app...` imports (e.g. in backend/tests).
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+
+  // Run pytest from backend/ so it picks up pyproject.toml settings.
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.cwd": "${workspaceFolder}/backend",
+  "python.testing.pytestArgs": ["tests"]
+}
