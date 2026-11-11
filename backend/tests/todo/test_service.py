@@ -4,18 +4,20 @@ import pytest
 
 from app.core.db import open_db
 from app.core.exceptions import NotFoundError
+from app.team import TeamRepo, TeamService
 from app.todo import TodoRepo, TodoService
 
 
 @pytest.fixture
 def service() -> TodoService:
-    return TodoService(TodoRepo(open_db(":memory:")))
+    db = open_db(":memory:")
+    return TodoService(TodoRepo(db), TeamService(TeamRepo(db)))
 
 
 def test_list_lifecycle(service: TodoService) -> None:
     lst = service.create_list("Work")
     assert [l.name for l in service.list_lists()] == ["Work"]
-    assert service.rename_list(lst.id, "Job").name == "Job"
+    assert service.update_list(lst.id, name="Job").name == "Job"
     service.delete_list(lst.id)
     assert service.list_lists() == []
 
@@ -23,7 +25,8 @@ def test_list_lifecycle(service: TodoService) -> None:
 def test_missing_list_raises_not_found(service: TodoService) -> None:
     for call in (
         lambda: service.get_list(999),
-        lambda: service.rename_list(999, "x"),
+        lambda: service.update_list(999, name="x"),
+        lambda: service.update_list(999, team_id=999),  # the list is reported, not the team
         lambda: service.delete_list(999),
         lambda: service.list_todos(999),
         lambda: service.create_todo(999, "a"),

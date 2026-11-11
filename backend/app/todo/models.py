@@ -6,6 +6,7 @@ from pydantic import Field, StrictBool, StrictInt, StringConstraints, model_vali
 from pydantic.json_schema import SkipJsonSchema
 
 from ..core.models import ApiModel
+from ..team.models import TeamId
 
 TODO_TEXT_MAX = 500
 TODO_LIST_NAME_MAX = 100
@@ -19,6 +20,7 @@ class TodoList(ApiModel):
 
     id: int
     name: str
+    team_id: int | None  # None: not assigned to a team
     open_count: int
     done_count: int
     created_at: str
@@ -27,10 +29,22 @@ class TodoList(ApiModel):
 
 class TodoListCreate(ApiModel):
     name: TodoListName
+    team_id: TeamId | None = None
 
 
 class TodoListPatch(ApiModel):
-    name: TodoListName
+    """Send `name` and/or `teamId`. `teamId: null` takes the list off its team."""
+
+    name: TodoListName | SkipJsonSchema[None] = None
+    team_id: TeamId | None = None
+
+    @model_validator(mode="after")
+    def check_fields(self) -> Self:
+        if "name" in self.model_fields_set and self.name is None:
+            raise ValueError("`name` must not be null")
+        if not self.model_fields_set:
+            raise ValueError("Nothing to update: send `name` and/or `teamId`")
+        return self
 
 
 class Todo(ApiModel):

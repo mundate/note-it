@@ -1,25 +1,34 @@
-import { TODO_LIST_NAME_MAX, type TodoList } from "@/api/client";
+import { TODO_LIST_NAME_MAX, type Team, type TodoList } from "@/api/client";
+import { teamApi } from "@/api/teams";
 import { todoListApi } from "@/api/todos";
+import { TeamSelect } from "@/components/TeamSelect";
+import { TodoListLink } from "@/components/TodoListLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
-import { TodoListLink } from "./components/TodoListLink";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-/** All todo lists, plus a form to create one (which then opens it). */
+/** All todo lists, each labelled with its team, plus a form to create one (which then opens it). */
 export function TodoListsPage() {
   const navigate = useNavigate();
   const [lists, setLists] = useState<TodoList[] | null>(null);
+  const [teams, setTeams] = useState<Team[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [teamId, setTeamId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
 
   const load = () => {
     setError(null);
-    todoListApi.all().then(setLists, e => setError(e.message));
+    Promise.all([todoListApi.all(), teamApi.all()]).then(([l, t]) => {
+      setLists(l);
+      setTeams(t);
+    }, e => setError(e.message));
   };
   useEffect(load, []);
+
+  const teamNames = useMemo(() => new Map(teams?.map(t => [t.id, t.name])), [teams]);
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,7 +37,7 @@ export function TodoListsPage() {
     setCreating(true);
     setError(null);
     try {
-      const created = await todoListApi.create(value);
+      const created = await todoListApi.create(value, teamId);
       navigate({ to: "/todos/$listId", params: { listId: created.id } });
     } catch (e) {
       setError((e as Error).message);
@@ -48,8 +57,9 @@ export function TodoListsPage() {
           aria-label="New list name"
           maxLength={TODO_LIST_NAME_MAX}
         />
-        <Button type="submit" disabled={!name.trim() || creating}>
-          <Plus /> Create
+        {teams && teams.length > 0 && <TeamSelect teams={teams} value={teamId} onChange={setTeamId} />}
+        <Button type="submit" disabled={!name.trim() || creating || !lists}>
+          <Plus /> Create list
         </Button>
       </form>
 
@@ -72,7 +82,7 @@ export function TodoListsPage() {
         <ul className="flex flex-col gap-2">
           {lists.map(list => (
             <li key={list.id}>
-              <TodoListLink list={list} />
+              <TodoListLink list={list} teamName={list.teamId === null ? undefined : teamNames.get(list.teamId)} />
             </li>
           ))}
         </ul>

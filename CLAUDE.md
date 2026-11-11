@@ -11,3 +11,9 @@ Read my PLANNING.md file to get an idea of things I care about
 - Non-component code shared by more than one page goes at the top level too: API calls in `frontend/api/` (e.g. `api/todos.ts`), other helpers in `frontend/lib/`.
 - When a page component starts being used by a second page, move it to `frontend/components/` rather than importing across page folders.
 - A route that isn't built yet can render the shared `Placeholder` directly; give it a page folder once it gets real UI.
+
+# Backend structure
+
+- `backend/app/core/` is shared infrastructure (db, base models, errors). Each feature is its own package under `backend/app/` (`todo/`, `team/`, ...) with `models.py`, `repository.py` (SQL), `service.py` (rules, raises `core.exceptions` errors) and `routes.py`.
+- A feature used by several others (like `team`, which todo lists, notes and diagrams can all be assigned to) is its own package. Other features may depend on it, never the reverse. Teams are optional: no feature may require one.
+- Repositories get their lock from `core.db.lock_for(db)` so all repositories on a connection share one lock.

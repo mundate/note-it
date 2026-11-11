@@ -1,19 +1,23 @@
 /** Todo list and todo requests. Each call returns the response data or throws the API's error message. */
-import { client, unwrap, type Todo, type TodoList, type TodoPatch } from "./client";
+import { client, unwrap, type Todo, type TodoList, type TodoListPatch, type TodoPatch } from "./client";
 
 const list = (listId: number) => ({ params: { path: { list_id: listId } } });
 const todo = (listId: number, todoId: number) => ({ params: { path: { list_id: listId, todo_id: todoId } } });
 
 export const todoListApi = {
-  all: async (): Promise<TodoList[]> => unwrap(await client.GET("/api/todo-lists")),
+  /** All lists, or only one team's. */
+  all: async (teamId?: number): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/todo-lists", { params: { query: teamId === undefined ? {} : { teamId } } })),
 
   get: async (listId: number): Promise<TodoList> => unwrap(await client.GET("/api/todo-lists/{list_id}", list(listId))),
 
-  create: async (name: string): Promise<TodoList> =>
-    unwrap(await client.POST("/api/todo-lists", { body: { name } })),
+  /** `teamId` assigns the new list to a team. */
+  create: async (name: string, teamId: number | null = null): Promise<TodoList> =>
+    unwrap(await client.POST("/api/todo-lists", { body: { name, teamId } })),
 
-  rename: async (listId: number, name: string): Promise<TodoList> =>
-    unwrap(await client.PATCH("/api/todo-lists/{list_id}", { ...list(listId), body: { name } })),
+  /** Rename the list and/or move it to a team. `teamId: null` takes it off its team. */
+  update: async (listId: number, patch: TodoListPatch): Promise<TodoList> =>
+    unwrap(await client.PATCH("/api/todo-lists/{list_id}", { ...list(listId), body: patch })),
 
   /** Deletes the list and all of its todos. */
   remove: async (listId: number): Promise<void> => {

@@ -6,21 +6,24 @@ never `HTTPException`, so it can be reused outside HTTP (scripts, other features
 """
 
 from ..core.exceptions import NotFoundError
+from ..team import TeamService
 from .models import Todo, TodoList
-from .repository import TodoRepo
+from .repository import UNSET, TodoRepo, Unset
 
 LIST_NOT_FOUND = "Todo list not found"
 TODO_NOT_FOUND = "Todo not found"
 
 
 class TodoService:
-    def __init__(self, repo: TodoRepo) -> None:
+    def __init__(self, repo: TodoRepo, teams: TeamService) -> None:
         self.repo = repo
+        self.teams = teams  # to check a team exists before assigning a list to it
 
     # ---------- lists ----------
 
-    def list_lists(self) -> list[TodoList]:
-        return self.repo.list_lists()
+    def list_lists(self, team_id: int | None = None) -> list[TodoList]:
+        """All lists, or one team's (empty for an unknown team)."""
+        return self.repo.list_lists(team_id)
 
     def get_list(self, list_id: int) -> TodoList:
         list_ = self.repo.get_list(list_id)
@@ -28,11 +31,19 @@ class TodoService:
             raise NotFoundError(LIST_NOT_FOUND)
         return list_
 
-    def create_list(self, name: str) -> TodoList:
-        return self.repo.create_list(name)
+    def create_list(self, name: str, team_id: int | None = None) -> TodoList:
+        if team_id is not None:
+            self.teams.get_team(team_id)
+        return self.repo.create_list(name, team_id)
 
-    def rename_list(self, list_id: int, name: str) -> TodoList:
-        list_ = self.repo.rename_list(list_id, name)
+    def update_list(
+        self, list_id: int, *, name: str | None = None, team_id: int | None | Unset = UNSET
+    ) -> TodoList:
+        """Renames a list and/or moves it to a team. `team_id=None` takes it off its team."""
+        self.get_list(list_id)  # a missing list wins over a missing team
+        if isinstance(team_id, int):
+            self.teams.get_team(team_id)
+        list_ = self.repo.update_list(list_id, name=name, team_id=team_id)
         if list_ is None:
             raise NotFoundError(LIST_NOT_FOUND)
         return list_

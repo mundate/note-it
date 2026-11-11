@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from "./routes/index"
 import { Route as DiagramsRouteImport } from "./routes/diagrams"
 import { Route as NotesRouteImport } from "./routes/notes"
 import { Route as SettingsRouteImport } from "./routes/settings"
+import { Route as TeamsIndexRouteImport } from "./routes/teams/index"
+import { Route as TeamsTeamIdRouteImport } from "./routes/teams/$teamId"
 import { Route as TodosIndexRouteImport } from "./routes/todos/index"
 import { Route as TodosListIdRouteImport } from "./routes/todos/$listId"
 
@@ -36,6 +38,16 @@ const SettingsRoute = SettingsRouteImport.update({
   path: "/settings",
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamsIndexRoute = TeamsIndexRouteImport.update({
+  id: "/teams/",
+  path: "/teams/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdRoute = TeamsTeamIdRouteImport.update({
+  id: "/teams/$teamId",
+  path: "/teams/$teamId",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TodosIndexRoute = TodosIndexRouteImport.update({
   id: "/todos/",
   path: "/todos/",
@@ -52,7 +64,9 @@ export interface FileRoutesByFullPath {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
+  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
+  "/teams/": typeof TeamsIndexRoute
   "/todos/": typeof TodosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,7 +74,9 @@ export interface FileRoutesByTo {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
+  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
+  "/teams": typeof TeamsIndexRoute
   "/todos": typeof TodosIndexRoute
 }
 export interface FileRoutesById {
@@ -69,22 +85,41 @@ export interface FileRoutesById {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
+  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
+  "/teams/": typeof TeamsIndexRoute
   "/todos/": typeof TodosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    "/" | "/diagrams" | "/notes" | "/settings" | "/todos/$listId" | "/todos/"
+    | "/"
+    | "/diagrams"
+    | "/notes"
+    | "/settings"
+    | "/teams/$teamId"
+    | "/todos/$listId"
+    | "/teams/"
+    | "/todos/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/diagrams" | "/notes" | "/settings" | "/todos/$listId" | "/todos"
+  to:
+    | "/"
+    | "/diagrams"
+    | "/notes"
+    | "/settings"
+    | "/teams/$teamId"
+    | "/todos/$listId"
+    | "/teams"
+    | "/todos"
   id:
     | "__root__"
     | "/"
     | "/diagrams"
     | "/notes"
     | "/settings"
+    | "/teams/$teamId"
     | "/todos/$listId"
+    | "/teams/"
     | "/todos/"
   fileRoutesById: FileRoutesById
 }
@@ -93,7 +128,9 @@ export interface RootRouteChildren {
   DiagramsRoute: typeof DiagramsRoute
   NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
+  TeamsTeamIdRoute: typeof TeamsTeamIdRoute
   TodosListIdRoute: typeof TodosListIdRoute
+  TeamsIndexRoute: typeof TeamsIndexRoute
   TodosIndexRoute: typeof TodosIndexRoute
 }
 
@@ -127,6 +164,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/teams/": {
+      id: "/teams/"
+      path: "/teams"
+      fullPath: "/teams/"
+      preLoaderRoute: typeof TeamsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId": {
+      id: "/teams/$teamId"
+      path: "/teams/$teamId"
+      fullPath: "/teams/$teamId"
+      preLoaderRoute: typeof TeamsTeamIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/todos/": {
       id: "/todos/"
       path: "/todos"
@@ -149,7 +200,9 @@ const rootRouteChildren: RootRouteChildren = {
   DiagramsRoute: DiagramsRoute,
   NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
+  TeamsTeamIdRoute: TeamsTeamIdRoute,
   TodosListIdRoute: TodosListIdRoute,
+  TeamsIndexRoute: TeamsIndexRoute,
   TodosIndexRoute: TodosIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -9,7 +9,9 @@ import type { components, paths } from "./schema";
 export const client = createClient<paths>({ baseUrl: "/" });
 
 type Schemas = components["schemas"];
+export type Team = Schemas["Team"];
 export type TodoList = Schemas["TodoList"];
+export type TodoListPatch = Schemas["TodoListPatch"];
 export type Todo = Schemas["Todo"];
 export type TodoCreate = Schemas["TodoCreate"];
 export type TodoPatch = Schemas["TodoPatch"];
@@ -27,3 +29,4 @@ export function unwrap<T>(result: { data?: T; error?: ErrorResponse | unknown; r
 // Max lengths, read from the backend's validation rules.
 export const TODO_TEXT_MAX: number = spec.components.schemas.TodoCreate.properties.text.maxLength;
 export const TODO_LIST_NAME_MAX: number = spec.components.schemas.TodoListCreate.properties.name.maxLength;
+export const TEAM_NAME_MAX: number = spec.components.schemas.TeamCreate.properties.name.maxLength;

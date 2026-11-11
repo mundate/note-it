@@ -11,6 +11,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .core.db import DEFAULT_DB_PATH, REPO_ROOT, open_db
 from .core.exceptions import ERROR_RESPONSES, drop_validation_responses, register_exception_handlers
 from .todo import TodoRepo, TodoService
+from .team import TeamRepo, TeamService
+from .team import router as teams_router
 from .todo import router as todos_router
 
 DIST_DIR = REPO_ROOT / "dist"
@@ -21,7 +23,9 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         # Opened here (not at import) so exporting the OpenAPI schema has no side effects.
         db = open_db(db_path)
-        app.state.todo_service = TodoService(TodoRepo(db))
+        teams = TeamService(TeamRepo(db))
+        app.state.team_service = teams
+        app.state.todo_service = TodoService(TodoRepo(db), teams)
         yield
         db.close()
 
@@ -38,6 +42,7 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     # All errors use one shape: {"error": "..."}, documented as ErrorResponse.
     register_exception_handlers(app)
 
+    app.include_router(teams_router)
     app.include_router(todos_router)
 
     # FastAPI documents a 422 on every route with a body, but our handler above turns

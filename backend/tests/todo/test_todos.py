@@ -37,9 +37,9 @@ def test_list_crud_and_counts(repo: TodoRepo) -> None:
     got = repo.get_list(work.id)
     assert got is not None and (got.open_count, got.done_count) == (1, 1)
 
-    renamed = repo.rename_list(home.id, "House")
+    renamed = repo.update_list(home.id, name="House")
     assert renamed is not None and renamed.name == "House"
-    assert repo.rename_list(999, "x") is None
+    assert repo.update_list(999, name="x") is None
     assert repo.get_list(999) is None
 
 
@@ -131,7 +131,8 @@ def test_list_routes(client: TestClient) -> None:
     assert res.status_code == 201
     lst = res.json()
     assert lst["name"] == "Work"
-    assert set(lst) == {"id", "name", "openCount", "doneCount", "createdAt", "updatedAt"}
+    assert set(lst) == {"id", "name", "teamId", "openCount", "doneCount", "createdAt", "updatedAt"}
+    assert lst["teamId"] is None
 
     lid = lst["id"]
     assert [l["id"] for l in client.get("/api/todo-lists").json()] == [lid]
@@ -140,6 +141,10 @@ def test_list_routes(client: TestClient) -> None:
     assert client.get("/api/todo-lists/abc").status_code == 404
 
     assert client.patch(f"/api/todo-lists/{lid}", json={"name": ""}).status_code == 400
+    assert client.patch(f"/api/todo-lists/{lid}", json={"name": None}).status_code == 400
+    assert client.patch(f"/api/todo-lists/{lid}", json={}).json() == {
+        "error": "Nothing to update: send `name` and/or `teamId`"
+    }
     assert client.patch("/api/todo-lists/999", json={"name": "x"}).status_code == 404
     assert client.patch(f"/api/todo-lists/{lid}", json={"name": "Job"}).json()["name"] == "Job"
 
@@ -214,6 +219,8 @@ def test_openapi_todo_schemas() -> None:
         schemas
     )
     assert set(schemas["Todo"]["required"]) == {"id", "text", "done", "createdAt", "updatedAt"}
-    assert set(schemas["TodoList"]["required"]) == {"id", "name", "openCount", "doneCount", "createdAt", "updatedAt"}
+    assert set(schemas["TodoList"]["required"]) == {
+        "id", "name", "teamId", "openCount", "doneCount", "createdAt", "updatedAt"
+    }
     patch = schemas["TodoPatch"]["properties"]
     assert patch["text"]["type"] == "string" and patch["done"]["type"] == "boolean"  # no `| null`

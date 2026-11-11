@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TODO_TEXT_MAX, type Todo, type TodoList, type TodoPatch } from "@/api/client";
+import { TODO_TEXT_MAX, type Team, type Todo, type TodoList, type TodoListPatch, type TodoPatch } from "@/api/client";
+import { teamApi } from "@/api/teams";
 import { todoApi as todoApiFor, todoListApi } from "@/api/todos";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Plus } from "lucide-react";
@@ -13,6 +14,7 @@ export function TodoListPage({ listId }: { listId: number }) {
   const navigate = useNavigate();
   const todoApi = todoApiFor(listId);
   const [list, setList] = useState<TodoList | null>(null);
+  const [teams, setTeams] = useState<Team[] | null>(null);
   const [todos, setTodos] = useState<Todo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -25,13 +27,18 @@ export function TodoListPage({ listId }: { listId: number }) {
     }, e => setError(e.message));
   };
   useEffect(load, [listId]);
+  // Only needed for the team picker, so a failure here doesn't block the list.
+  useEffect(() => {
+    teamApi.all().then(setTeams, e => setError(e.message));
+  }, []);
 
-  const rename = async (name: string) => {
+  /** Rename and/or move the list, showing the change right away. */
+  const updateList = async (patch: TodoListPatch) => {
     const before = list;
-    setList(l => (l ? { ...l, name } : l));
+    setList(l => (l ? { ...l, ...patch } : l));
     setError(null);
     try {
-      setList(await todoListApi.rename(listId, name));
+      setList(await todoListApi.update(listId, patch));
     } catch (e) {
       setList(before);
       setError((e as Error).message);
@@ -123,7 +130,15 @@ export function TodoListPage({ listId }: { listId: number }) {
       </Link>
 
       {list ? (
-        <ListHeader name={list.name} todoCount={todos?.length ?? 0} onRename={rename} onDelete={deleteList} />
+        <ListHeader
+          name={list.name}
+          teamId={list.teamId}
+          teams={teams}
+          todoCount={todos?.length ?? 0}
+          onRename={name => updateList({ name })}
+          onMove={teamId => updateList({ teamId })}
+          onDelete={deleteList}
+        />
       ) : (
         <h1 className="text-3xl font-bold text-muted-foreground">{error ? "Todo list" : "Loading…"}</h1>
       )}

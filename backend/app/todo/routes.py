@@ -3,14 +3,24 @@ service, SQL in the repository. Routes only translate HTTP ↔ service calls."""
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from ..core.exceptions import BAD_REQUEST, not_found
-from .models import ReorderRequest, Todo, TodoCreate, TodoList, TodoListCreate, TodoListPatch, TodoPatch
+from .models import (
+    ReorderRequest,
+    Todo,
+    TodoCreate,
+    TodoList,
+    TodoListCreate,
+    TodoListPatch,
+    TodoPatch,
+)
 from .service import TodoService
 
 # Documents the 404s that TodoService raises as NotFoundError.
+TEAM_NOT_FOUND = not_found("Team not found")
 LIST_NOT_FOUND = not_found("Todo list not found")
+LIST_OR_TEAM_NOT_FOUND = not_found("Todo list or team not found")
 NOT_FOUND = not_found("Todo list or todo not found")
 
 
@@ -27,13 +37,16 @@ router = APIRouter(prefix="/api/todo-lists", tags=["todos"])
 
 
 @router.get("")
-def list_todo_lists(service: Service) -> list[TodoList]:
-    return service.list_lists()
+def list_todo_lists(
+    service: Service,
+    team_id: Annotated[int | None, Query(alias="teamId", description="Only this team's lists")] = None,
+) -> list[TodoList]:
+    return service.list_lists(team_id)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, responses=BAD_REQUEST)
+@router.post("", status_code=status.HTTP_201_CREATED, responses={**BAD_REQUEST, **TEAM_NOT_FOUND})
 def create_todo_list(body: TodoListCreate, service: Service) -> TodoList:
-    return service.create_list(body.name)
+    return service.create_list(body.name, body.team_id)
 
 
 @router.get("/{list_id}", responses=LIST_NOT_FOUND)
@@ -41,9 +54,9 @@ def get_todo_list(list_id: int, service: Service) -> TodoList:
     return service.get_list(list_id)
 
 
-@router.patch("/{list_id}", responses={**BAD_REQUEST, **LIST_NOT_FOUND})
-def rename_todo_list(list_id: int, body: TodoListPatch, service: Service) -> TodoList:
-    return service.rename_list(list_id, body.name)
+@router.patch("/{list_id}", responses={**BAD_REQUEST, **LIST_OR_TEAM_NOT_FOUND})
+def update_todo_list(list_id: int, body: TodoListPatch, service: Service) -> TodoList:
+    return service.update_list(list_id, **body.model_dump(include=body.model_fields_set))
 
 
 @router.delete("/{list_id}", status_code=status.HTTP_204_NO_CONTENT, responses=LIST_NOT_FOUND)

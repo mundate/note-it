@@ -1,4 +1,4 @@
-import { House, ListTodo, Network, NotebookPen, Settings, type LucideIcon } from "lucide-react";
+import { House, ListTodo, Network, NotebookPen, Settings, Users, type LucideIcon } from "lucide-react";
 import type { FileRouteTypes } from "./routeTree.gen";
 
 export type NavItem = {
@@ -14,5 +14,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/notes", label: "Notes", icon: NotebookPen, description: "Write and organize notes." },
   { to: "/todos", label: "Todo Lists", icon: ListTodo, description: "Track daily, sprint and timeless todos." },
   { to: "/diagrams", label: "Diagrams", icon: Network, description: "Sketch ideas and flows." },
+  { to: "/teams", label: "Teams", icon: Users, description: "Share lists, notes and diagrams with a team." },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

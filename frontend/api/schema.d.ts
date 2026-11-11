@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+    "/api/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Teams */
+        get: operations["list_teams"];
+        put?: never;
+        /** Create Team */
+        post: operations["create_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Team */
+        get: operations["get_team"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Team
+         * @description Deletes the team. What was assigned to it is kept, without a team.
+         */
+        delete: operations["delete_team"];
+        options?: never;
+        head?: never;
+        /** Rename Team */
+        patch: operations["rename_team"];
+        trace?: never;
+    };
     "/api/todo-lists": {
         parameters: {
             query?: never;
@@ -37,8 +77,8 @@ export interface paths {
         delete: operations["delete_todo_list"];
         options?: never;
         head?: never;
-        /** Rename Todo List */
-        patch: operations["rename_todo_list"];
+        /** Update Todo List */
+        patch: operations["update_todo_list"];
         trace?: never;
     };
     "/api/todo-lists/{list_id}/todos": {
@@ -114,6 +154,27 @@ export interface components {
             /** Ids */
             ids: number[];
         };
+        /** Team */
+        Team: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /** TeamCreate */
+        TeamCreate: {
+            /** Name */
+            name: string;
+        };
+        /** TeamPatch */
+        TeamPatch: {
+            /** Name */
+            name: string;
+        };
         /**
          * Todo
          * @description A todo as returned by the API. No defaults, so every field is required in TS.
@@ -144,6 +205,8 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Teamid */
+            teamId: number | null;
             /** Opencount */
             openCount: number;
             /** Donecount */
@@ -157,11 +220,18 @@ export interface components {
         TodoListCreate: {
             /** Name */
             name: string;
+            /** Teamid */
+            teamId?: number | null;
         };
-        /** TodoListPatch */
+        /**
+         * TodoListPatch
+         * @description Send `name` and/or `teamId`. `teamId: null` takes the list off its team.
+         */
         TodoListPatch: {
             /** Name */
-            name: string;
+            name?: string;
+            /** Teamid */
+            teamId?: number | null;
         };
         /** TodoPatch */
         TodoPatch: {
@@ -179,9 +249,214 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_todo_lists: {
+    list_teams: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"][];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    rename_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_todo_lists: {
+        parameters: {
+            query?: {
+                /** @description Only this team's lists */
+                teamId?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -232,6 +507,15 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Team not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -328,7 +612,7 @@ export interface operations {
             };
         };
     };
-    rename_todo_list: {
+    update_todo_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -361,7 +645,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Todo list not found */
+            /** @description Todo list or team not found */
             404: {
                 headers: {
                     [name: string]: unknown;

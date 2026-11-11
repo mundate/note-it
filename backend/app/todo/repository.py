@@ -1,9 +1,8 @@
 """Todo repository: the only place that knows about the `todo_lists` and `todos` tables."""
 
 import sqlite3
-import threading
 
-from ..core.db import transaction
+from ..core.db import lock_for, transaction
 from .models import Todo, TodoList
 
 NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
@@ -17,10 +16,18 @@ LIST_SELECT = """
 """
 
 
+class Unset:
+    """Marks an argument that wasn't passed, where None is a meaningful value."""
+
+
+UNSET = Unset()
+
+
 def _to_list(row: sqlite3.Row) -> TodoList:
     return TodoList(
         id=row["id"],
         name=row["name"],
+        team_id=row["team_id"],
         open_count=row["open_count"],
         done_count=row["done_count"],
         created_at=row["created_at"],
@@ -41,15 +48,15 @@ def _to_todo(row: sqlite3.Row) -> Todo:
 class TodoRepo:
     def __init__(self, db: sqlite3.Connection) -> None:
         self.db = db
-        # FastAPI runs sync endpoints in a thread pool; one lock keeps each operation
-        # (and each transaction) on the shared connection atomic.
-        self._lock = threading.Lock()
+        self._lock = lock_for(db)  # shared with other repositories on this connection
 
     # ---------- lists ----------
 
-    def list_lists(self) -> list[TodoList]:
+    def list_lists(self, team_id: int | None = None) -> list[TodoList]:
+        """All lists, or only one team's when `team_id` is given."""
+        where, args = ("WHERE l.team_id = ?", (team_id,)) if team_id is not None else ("", ())
         with self._lock:
-            rows = self.db.execute(f"{LIST_SELECT} ORDER BY l.position, l.id").fetchall()
+            rows = self.db.execute(f"{LIST_SELECT} {where} ORDER BY l.position, l.id", args).fetchall()
         return [_to_list(r) for r in rows]
 
     def get_list(self, list_id: int) -> TodoList | None:
@@ -57,23 +64,33 @@ class TodoRepo:
             row = self.db.execute(f"{LIST_SELECT} WHERE l.id = ?", (list_id,)).fetchone()
         return _to_list(row) if row else None
 
-    def create_list(self, name: str) -> TodoList:
+    def create_list(self, name: str, team_id: int | None = None) -> TodoList:
         with self._lock:
             (list_id,) = self.db.execute(
-                """INSERT INTO todo_lists (name, position)
-                   VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
+                """INSERT INTO todo_lists (name, team_id, position)
+                   VALUES (?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
                    RETURNING id""",
-                (name,),
+                (name, team_id),
             ).fetchone()
         list_ = self.get_list(list_id)
         assert list_ is not None
         return list_
 
-    def rename_list(self, list_id: int, name: str) -> TodoList | None:
-        """Returns the renamed list, or None if it doesn't exist."""
+    def update_list(
+        self, list_id: int, *, name: str | None = None, team_id: int | None | Unset = UNSET
+    ) -> TodoList | None:
+        """Changes the given fields (`team_id=None` takes the list off its team). Returns the
+        updated list, or None if it doesn't exist."""
+        sets, args = [f"updated_at = {NOW}"], []
+        if name is not None:
+            sets.append("name = ?")
+            args.append(name)
+        if not isinstance(team_id, Unset):
+            sets.append("team_id = ?")
+            args.append(team_id)
         with self._lock:
             changed = self.db.execute(
-                f"UPDATE todo_lists SET name = ?, updated_at = {NOW} WHERE id = ?", (name, list_id)
+                f"UPDATE todo_lists SET {', '.join(sets)} WHERE id = ?", (*args, list_id)
             ).rowcount
         return self.get_list(list_id) if changed else None
 
