@@ -1,4 +1,4 @@
-import { client, type ErrorResponse, type Todo, type TodoPatch } from "../api/client";
+import { client, type ErrorResponse, type Todo, type TodoPatch } from "@/api/client";
 
 /** Returns `data`, or throws the API's `{ error }` message. */
 function unwrap<T>(result: { data?: T; error?: ErrorResponse | unknown; response: Response }): T {

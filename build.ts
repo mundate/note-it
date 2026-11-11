@@ -10,6 +10,8 @@ const entrypoints = [...new Bun.Glob("frontend/**/*.html").scanSync()];
 const result = await Bun.build({
   entrypoints,
   outdir,
+  // Absolute asset URLs, so client-side routes like /todos/5 still load /chunk-*.js.
+  publicPath: "/",
   plugins: [tailwind],
   minify: true,
   target: "browser",

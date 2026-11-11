@@ -1,14 +1,10 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
+import type { NavItem } from "@/nav";
+import { Link } from "@tanstack/react-router";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useState } from "react";
-
-export type NavItem = {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-};
 
 const STORAGE_KEY = "sidebar:collapsed";
 
@@ -20,15 +16,7 @@ function readCollapsed(): boolean {
   return window.matchMedia("(max-width: 767px)").matches;
 }
 
-export function Sidebar({
-  items,
-  activeId,
-  onSelect,
-}: {
-  items: NavItem[];
-  activeId: string;
-  onSelect: (id: string) => void;
-}) {
+export function Sidebar({ items }: { items: NavItem[] }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
 
   useEffect(() => {
@@ -74,27 +62,26 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-3 py-2">
-        {items.map(({ id, label, icon: Icon }) => {
-          const active = id === activeId;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onSelect(id)}
-              aria-current={active ? "page" : undefined}
-              title={collapsed ? label : undefined}
-              className={cn(
-                "flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-medium outline-none transition-colors",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
-                collapsed && "justify-center px-0",
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {!collapsed && <span className="truncate">{label}</span>}
-            </button>
-          );
-        })}
+        {items.map(({ to, label, icon: Icon }) => (
+          // Link sets aria-current="page" on the active route; the classes below key off it.
+          <Link
+            key={to}
+            to={to}
+            // Home is only active on "/" itself; other items stay active on their subpages.
+            activeOptions={{ exact: to === "/" }}
+            title={collapsed ? label : undefined}
+            className={cn(
+              "flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-medium outline-none transition-colors",
+              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              "aria-[current=page]:bg-sidebar-primary aria-[current=page]:text-sidebar-primary-foreground",
+              "aria-[current=page]:hover:bg-sidebar-primary aria-[current=page]:hover:text-sidebar-primary-foreground",
+              collapsed && "justify-center px-0",
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            {!collapsed && <span className="truncate">{label}</span>}
+          </Link>
+        ))}
       </nav>
 
       <div className={cn("border-t border-sidebar-border p-3", collapsed && "flex justify-center")}>

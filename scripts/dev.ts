@@ -1,6 +1,7 @@
 /**
- * `bun dev`: runs the FastAPI backend and the Bun frontend dev server together, and
- * regenerates the frontend's API types whenever backend code changes.
+ * `bun dev`: runs the FastAPI backend and the Bun frontend dev server together,
+ * regenerates the frontend's API types whenever backend code changes, and regenerates
+ * the route tree (frontend/routeTree.gen.ts) whenever files in frontend/routes/ change.
  */
 import { spawn, type Subprocess } from "bun";
 import { watch } from "node:fs";
@@ -20,6 +21,7 @@ const children: Subprocess[] = [
     stdout: "inherit",
     stderr: "inherit",
   }),
+  spawn(["bunx", "tsr", "watch"], { cwd: root, stdout: "ignore", stderr: "inherit" }),
 ];
 
 // Regenerate types on backend changes (debounced; one run at a time).
