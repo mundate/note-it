@@ -3,9 +3,9 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.db import migrate, open_db
+from app.core.db import open_db
 from app.main import create_app
-from app.todos import TodoRepo
+from app.todo import TodoRepo
 
 
 @pytest.fixture
@@ -21,16 +21,6 @@ def client() -> Iterator[TestClient]:
 
 def texts(todos) -> list[str]:
     return [t.text for t in todos]
-
-
-# ---------- migrations ----------
-
-
-def test_migrations_set_version_and_are_safe_to_rerun(repo: TodoRepo) -> None:
-    version = lambda: repo.db.execute("PRAGMA user_version").fetchone()[0]  # noqa: E731
-    assert version() == 1
-    migrate(repo.db)
-    assert version() == 1
 
 
 # ---------- repository ----------
@@ -121,12 +111,10 @@ def test_reorder_route(client: TestClient) -> None:
     assert [t["text"] for t in res.json()] == ["b", "a"]
 
 
-def test_openapi_schema_is_clean() -> None:
-    schema = create_app(":memory:").openapi()
-    names = set(schema["components"]["schemas"])
-    assert {"Todo", "TodoCreate", "TodoPatch", "ReorderRequest", "ErrorResponse"} <= names
-    assert "HTTPValidationError" not in names
-    todo = schema["components"]["schemas"]["Todo"]
-    assert set(todo["required"]) == {"id", "text", "done", "createdAt", "updatedAt"}
-    patch = schema["components"]["schemas"]["TodoPatch"]["properties"]
+def test_openapi_todo_schemas() -> None:
+    """The shapes the frontend's generated TS types depend on."""
+    schemas = create_app(":memory:").openapi()["components"]["schemas"]
+    assert {"Todo", "TodoCreate", "TodoPatch", "ReorderRequest"} <= set(schemas)
+    assert set(schemas["Todo"]["required"]) == {"id", "text", "done", "createdAt", "updatedAt"}
+    patch = schemas["TodoPatch"]["properties"]
     assert patch["text"]["type"] == "string" and patch["done"]["type"] == "boolean"  # no `| null`

@@ -1,21 +1,13 @@
-"""API models. These are the source of truth for the frontend's generated TypeScript types.
-
-Model class names become TS type names, so keep them stable. Python attributes are
-snake_case; JSON (and therefore TS) is camelCase via the alias generator.
-"""
+"""Todo API models. Class names become the frontend's TS type names, so keep them stable."""
 
 from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StringConstraints, model_validator
-from pydantic.alias_generators import to_camel
+from pydantic import Field, StrictBool, StrictInt, StringConstraints, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
+from ..core.models import ApiModel
+
 TODO_TEXT_MAX = 500
-
-
-class ApiModel(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
 
 TodoText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=TODO_TEXT_MAX)]
 
@@ -59,7 +51,3 @@ class ReorderRequest(ApiModel):
         if len(set(self.ids)) != len(self.ids):
             raise ValueError("`ids` must not contain duplicates")
         return self
-
-
-class ErrorResponse(ApiModel):
-    error: str

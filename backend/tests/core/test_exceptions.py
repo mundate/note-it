@@ -6,8 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from app.exceptions import register_exception_handlers
-from app.exceptions.handlers import _validation_message
+from app.core.exceptions import AppError, ConflictError, NotFoundError, register_exception_handlers
+from app.core.exceptions.handlers import _validation_message
 
 
 class Body(BaseModel):
@@ -30,7 +30,16 @@ def client() -> TestClient:
     def item(item_id: int) -> int:
         return item_id
 
-    return TestClient(app)
+    @app.get("/domain/{kind}")
+    def domain(kind: str) -> None:
+        raise {"missing": NotFoundError, "conflict": ConflictError, "base": AppError}[kind](f"{kind}!")
+
+    @app.get("/crash")
+    def crash() -> None:
+        raise RuntimeError("secret internals")
+
+    # raise_server_exceptions=False: return the 500 response instead of re-raising in the test.
+    return TestClient(app, raise_server_exceptions=False)
 
 
 def test_http_exception_uses_error_shape(client: TestClient) -> None:
@@ -45,8 +54,21 @@ def test_invalid_body_is_400_with_field_name(client: TestClient) -> None:
 
 
 def test_bad_path_param_is_404(client: TestClient) -> None:
-    assert client.get("/items/abc").status_code == 404
+    res = client.get("/items/abc")
+    assert (res.status_code, res.json()) == (404, {"error": "Not found"})
     assert client.get("/items/7").json() == 7
+
+
+@pytest.mark.parametrize(("kind", "status"), [("missing", 404), ("conflict", 409), ("base", 400)])
+def test_domain_errors_map_to_status_codes(client: TestClient, kind: str, status: int) -> None:
+    res = client.get(f"/domain/{kind}")
+    assert (res.status_code, res.json()) == (status, {"error": f"{kind}!"})
+
+
+def test_unhandled_exception_is_generic_500(client: TestClient) -> None:
+    res = client.get("/crash")
+    assert (res.status_code, res.json()) == (500, {"error": "Internal server error"})
+    assert "secret" not in res.text
 
 
 def test_unknown_route_is_404_with_error_shape(client: TestClient) -> None:

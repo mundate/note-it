@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from .db import REPO_ROOT
+from .core.db import REPO_ROOT
 from .main import create_app
 
 DEFAULT_OUTPUT = REPO_ROOT / "frontend" / "api" / "openapi.json"

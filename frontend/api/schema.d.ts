@@ -61,7 +61,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ErrorResponse */
+        /**
+         * ErrorResponse
+         * @description The body of every error response.
+         */
         ErrorResponse: {
             /** Error */
             error: string;
@@ -129,6 +132,15 @@ export interface operations {
                     "application/json": components["schemas"]["Todo"][];
                 };
             };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     create_todo: {
@@ -155,6 +167,15 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -204,6 +225,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     delete_todo: {
@@ -226,6 +256,15 @@ export interface operations {
             };
             /** @description Todo not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -270,6 +309,15 @@ export interface operations {
             };
             /** @description Todo not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
                 headers: {
                     [name: string]: unknown;
                 };

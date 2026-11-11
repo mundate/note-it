@@ -3,7 +3,7 @@
 import sqlite3
 import threading
 
-from .db import transaction
+from ..core.db import transaction
 from .models import Todo
 
 NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"

@@ -6,7 +6,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_PATH = os.environ.get("DB_PATH", str(REPO_ROOT / "data" / "note-it.sqlite"))
 
 # Schema migrations, applied in order. The index + 1 is the schema version stored in

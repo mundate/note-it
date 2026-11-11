@@ -26,6 +26,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -52,6 +62,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Todo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -97,6 +117,16 @@
                   },
                   "type": "array",
                   "title": "Response Reorder Todos"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -163,6 +193,16 @@
               }
             }
           },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Invalid request",
             "content": {
@@ -206,6 +246,16 @@
           "204": {
             "description": "Successful Response"
           },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Todo not found",
             "content": {
@@ -233,7 +283,8 @@
         "required": [
           "error"
         ],
-        "title": "ErrorResponse"
+        "title": "ErrorResponse",
+        "description": "The body of every error response."
       },
       "ReorderRequest": {
         "properties": {

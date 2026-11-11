@@ -8,10 +8,10 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .db import DEFAULT_DB_PATH, REPO_ROOT, open_db
-from .exceptions import register_exception_handlers
-from .routes import router as todos_router
-from .todos import TodoRepo
+from .core.db import DEFAULT_DB_PATH, REPO_ROOT, open_db
+from .core.exceptions import ERROR_RESPONSES, drop_validation_responses, register_exception_handlers
+from .todo import TodoRepo, TodoService
+from .todo import router as todos_router
 
 DIST_DIR = REPO_ROOT / "dist"
 
@@ -21,7 +21,7 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         # Opened here (not at import) so exporting the OpenAPI schema has no side effects.
         db = open_db(db_path)
-        app.state.todos = TodoRepo(db)
+        app.state.todo_service = TodoService(TodoRepo(db))
         yield
         db.close()
 
@@ -29,6 +29,8 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
         title="Note it! API",
         version="0.1.0",
         lifespan=lifespan,
+        # Every route documents ErrorResponse for any status it doesn't list itself.
+        responses=ERROR_RESPONSES,
         # Clean operation ids (e.g. "list_todos") in the OpenAPI schema.
         generate_unique_id_function=lambda route: route.name,
     )
@@ -43,12 +45,7 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     def openapi() -> dict[str, Any]:
         if app.openapi_schema:
             return app.openapi_schema
-        schema = FastAPI.openapi(app)
-        for path in schema.get("paths", {}).values():
-            for operation in path.values():
-                operation.get("responses", {}).pop("422", None)
-        for name in ("HTTPValidationError", "ValidationError"):
-            schema.get("components", {}).get("schemas", {}).pop(name, None)
+        schema = drop_validation_responses(FastAPI.openapi(app))
         app.openapi_schema = schema
         return schema
 
