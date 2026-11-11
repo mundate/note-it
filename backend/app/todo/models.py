@@ -9,6 +9,8 @@ from ..core.models import ApiModel
 from ..project.models import ProjectId
 from ..team.models import TeamId
 
+PeriodKind = Literal["daily", "sprint"]
+
 TODO_TEXT_MAX = 500
 TODO_LIST_NAME_MAX = 100
 
@@ -23,9 +25,11 @@ class TodoList(ApiModel):
     name: str
     team_id: int | None  # None: not assigned to a team
     project_id: int | None  # None: not in a project. Always in the project's team.
-    # "daily": one list per project per day, created by the server (see /api/projects/{id}/daily).
-    kind: Literal["standard", "daily"]
-    day: str | None  # YYYY-MM-DD for daily lists, else None
+    # "daily": one list per project per day; "sprint": one per sprint of the project's team.
+    # Both are created by the server (see /api/projects/{id}/daily and /sprints).
+    kind: Literal["standard", "daily", "sprint"]
+    day: str | None  # YYYY-MM-DD: a daily list's day, or a sprint's first day
+    end_day: str | None  # YYYY-MM-DD: the period's last day (same as `day` for daily)
     open_count: int
     done_count: int
     created_at: str

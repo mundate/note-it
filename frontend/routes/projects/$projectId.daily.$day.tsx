@@ -1,6 +1,6 @@
 import { Placeholder } from "@/components/Placeholder";
 import { isValidDay } from "@/lib/day";
-import { ProjectDailyPage } from "@/pages/project-daily/ProjectDailyPage";
+import { ProjectPeriodPage } from "@/pages/project-period/ProjectPeriodPage";
 import { createFileRoute } from "@tanstack/react-router";
 
 /** One day's daily list for the project, e.g. /projects/1/daily/2026-11-10. */
@@ -16,5 +16,5 @@ function DayRoute() {
   const { projectId, day } = Route.useParams();
   if (!Number.isInteger(projectId) || projectId < 1 || !isValidDay(day)) return <Placeholder title="Page not found" message="There's nothing at this address." />;
   // `key` gives each day fresh page state when stepping between days.
-  return <ProjectDailyPage key={`${projectId}/${day}`} projectId={projectId} day={day} />;
+  return <ProjectPeriodPage kind="daily" key={`${projectId}/${day}`} projectId={projectId} start={day} />;
 }

@@ -16,7 +16,7 @@ from .team import router as teams_router
 from .project import ProjectRepo, ProjectService
 from .project import router as projects_router
 from .project import team_projects_router
-from .todo import project_daily_router, team_daily_router
+from .todo import project_daily_router, project_sprint_router, team_daily_router, team_sprint_router
 from .todo import router as todos_router
 
 DIST_DIR = REPO_ROOT / "dist"
@@ -54,6 +54,8 @@ def create_app(db_path: str = DEFAULT_DB_PATH) -> FastAPI:
     app.include_router(projects_router)
     app.include_router(project_daily_router)
     app.include_router(team_daily_router)
+    app.include_router(project_sprint_router)
+    app.include_router(team_sprint_router)
 
     # FastAPI documents a 422 on every route with a body, but our handler above turns
     # those into 400 ErrorResponse. Drop them so the generated TS types are accurate.

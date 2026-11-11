@@ -1,5 +1,5 @@
 /** Team requests. Each call returns the response data or throws the API's error message. */
-import { client, unwrap, type Team } from "./client";
+import { client, unwrap, type Team, type TeamPatch } from "./client";
 
 const team = (teamId: number) => ({ params: { path: { team_id: teamId } } });
 
@@ -10,8 +10,9 @@ export const teamApi = {
 
   create: async (name: string): Promise<Team> => unwrap(await client.POST("/api/teams", { body: { name } })),
 
-  rename: async (teamId: number, name: string): Promise<Team> =>
-    unwrap(await client.PATCH("/api/teams/{team_id}", { ...team(teamId), body: { name } })),
+  /** Rename and/or set the sprint schedule (`sprintStart` + `sprintWeeks`, both or neither). */
+  update: async (teamId: number, patch: TeamPatch): Promise<Team> =>
+    unwrap(await client.PATCH("/api/teams/{team_id}", { ...team(teamId), body: patch })),
 
   /** Deletes the team. What was assigned to it is kept, without a team. */
   remove: async (teamId: number): Promise<void> => {

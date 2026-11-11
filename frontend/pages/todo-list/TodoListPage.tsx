@@ -21,9 +21,13 @@ export function TodoListPage({ listId }: { listId: number }) {
   const load = () => {
     setError(null);
     todoListApi.get(listId).then(l => {
-      // A daily list has its own page (no rename, team change or delete there).
+      // Daily and sprint lists have their own pages (no rename, team change or delete there).
       if (l.kind === "daily" && l.projectId !== null && l.day) {
         navigate({ to: "/projects/$projectId/daily/$day", params: { projectId: l.projectId, day: l.day }, replace: true });
+        return;
+      }
+      if (l.kind === "sprint" && l.projectId !== null && l.day) {
+        navigate({ to: "/projects/$projectId/sprint/$start", params: { projectId: l.projectId, start: l.day }, replace: true });
         return;
       }
       setList(l);

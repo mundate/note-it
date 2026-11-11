@@ -1,4 +1,4 @@
-import { PROJECT_NAME_MAX, TODO_LIST_NAME_MAX, type Project, type Team, type TodoList } from "@/api/client";
+import { PROJECT_NAME_MAX, TODO_LIST_NAME_MAX, type Project, type Team, type TeamPatch, type TodoList } from "@/api/client";
 import { projectApi } from "@/api/projects";
 import { teamApi } from "@/api/teams";
 import { todoListApi } from "@/api/todos";
@@ -7,8 +7,9 @@ import { TodoListLink } from "@/components/TodoListLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CalendarCheck, ChevronRight, FolderPlus, Plus } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarRange, ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
+import { SprintSchedule } from "./components/SprintSchedule";
 import { TeamHeader } from "./components/TeamHeader";
 
 /**
@@ -40,12 +41,13 @@ export function TeamPage({ teamId }: { teamId: number }) {
     setCreating(false);
   };
 
-  const rename = async (name: string) => {
+  /** Rename and/or change the sprint schedule, showing the change right away. */
+  const update = async (patch: TeamPatch) => {
     const before = team;
-    setTeam(t => (t ? { ...t, name } : t));
+    setTeam(t => (t ? ({ ...t, ...patch } as Team) : t));
     setError(null);
     try {
-      setTeam(await teamApi.rename(teamId, name));
+      setTeam(await teamApi.update(teamId, patch));
     } catch (e) {
       setTeam(before);
       fail(e);
@@ -93,8 +95,9 @@ export function TeamPage({ teamId }: { teamId: number }) {
   const listCount = (projectId: number) => allLists?.filter(l => l.projectId === projectId).length ?? 0;
   const looseLists = allLists?.filter(l => l.projectId === null) ?? [];
   const active = projects?.filter(p => p.status === "active") ?? [];
-  const done = projects?.filter(p => p.status === "done") ?? [];
+  const inactive = projects?.filter(p => p.status === "inactive") ?? [];
   const hasDaily = active.some(p => p.dailyEnabled);
+  const hasSprint = !!team?.sprintStart && active.length > 0;
   const card =
     "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -114,7 +117,7 @@ export function TeamPage({ teamId }: { teamId: number }) {
             name={team.name}
             listCount={allLists?.length ?? 0}
             projectCount={projects?.length ?? 0}
-            onRename={rename}
+            onRename={name => update({ name })}
             onDelete={deleteTeam}
           />
         ) : (
@@ -146,6 +149,16 @@ export function TeamPage({ teamId }: { teamId: number }) {
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
             </Link>
           )}
+          {hasSprint && (
+            <Link to="/teams/$teamId/sprint" params={{ teamId }} className={card}>
+              <CalendarRange className="size-5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Sprint</div>
+                <div className="text-sm text-muted-foreground">The current sprint's lists for every active project, in one place.</div>
+              </div>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
+          )}
 
           <section className="flex flex-col gap-2" aria-label="Projects">
             <h2 className="text-lg font-semibold">Projects</h2>
@@ -173,11 +186,11 @@ export function TeamPage({ teamId }: { teamId: number }) {
                 ))}
               </ul>
             )}
-            {done.length > 0 && (
-              <div className="mt-2 flex flex-col gap-2" aria-label="Done projects">
-                <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Done ({done.length})</h3>
+            {inactive.length > 0 && (
+              <div className="mt-2 flex flex-col gap-2" aria-label="Inactive projects">
+                <h3 className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Inactive ({inactive.length})</h3>
                 <ul className="flex flex-col gap-2">
-                  {done.map(p => (
+                  {inactive.map(p => (
                     <li key={p.id}>
                       <ProjectLink project={p} listCount={listCount(p.id)} />
                     </li>
@@ -186,6 +199,8 @@ export function TeamPage({ teamId }: { teamId: number }) {
               </div>
             )}
           </section>
+
+          <SprintSchedule team={team} onChange={update} />
 
           <section className="flex flex-col gap-2" aria-label="Todo lists">
             <div>

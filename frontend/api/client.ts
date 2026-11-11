@@ -10,6 +10,7 @@ export const client = createClient<paths>({ baseUrl: "/" });
 
 type Schemas = components["schemas"];
 export type Team = Schemas["Team"];
+export type TeamPatch = Schemas["TeamPatch"];
 export type Project = Schemas["Project"];
 export type ProjectPatch = Schemas["ProjectPatch"];
 export type TodoList = Schemas["TodoList"];

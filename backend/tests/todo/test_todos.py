@@ -131,7 +131,7 @@ def test_list_routes(client: TestClient) -> None:
     assert res.status_code == 201
     lst = res.json()
     assert lst["name"] == "Work"
-    assert set(lst) == {"id", "name", "teamId", "projectId", "kind", "day", "openCount", "doneCount", "createdAt", "updatedAt"}
+    assert set(lst) == {"id", "name", "teamId", "projectId", "kind", "day", "endDay", "openCount", "doneCount", "createdAt", "updatedAt"}
     assert (lst["teamId"], lst["kind"], lst["day"]) == (None, "standard", None)
 
     lid = lst["id"]
@@ -220,7 +220,7 @@ def test_openapi_todo_schemas() -> None:
     )
     assert set(schemas["Todo"]["required"]) == {"id", "text", "done", "createdAt", "updatedAt"}
     assert set(schemas["TodoList"]["required"]) == {
-        "id", "name", "teamId", "projectId", "kind", "day", "openCount", "doneCount", "createdAt", "updatedAt"
+        "id", "name", "teamId", "projectId", "kind", "day", "endDay", "openCount", "doneCount", "createdAt", "updatedAt"
     }
     patch = schemas["TodoPatch"]["properties"]
     assert patch["text"]["type"] == "string" and patch["done"]["type"] == "boolean"  # no `| null`

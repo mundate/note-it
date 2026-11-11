@@ -4,7 +4,7 @@ import sqlite3
 from datetime import date
 
 from ..core.db import lock_for, transaction
-from .models import Todo, TodoList
+from .models import PeriodKind, Todo, TodoList
 
 NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
 
@@ -32,6 +32,7 @@ def _to_list(row: sqlite3.Row) -> TodoList:
         project_id=row["project_id"],
         kind=row["kind"],
         day=row["day"],
+        end_day=row["end_day"],
         open_count=row["open_count"],
         done_count=row["done_count"],
         created_at=row["created_at"],
@@ -115,69 +116,82 @@ class TodoRepo:
             ).rowcount
         return self.get_list(list_id) if changed else None
 
-    # ---------- daily lists (one per project per day) ----------
+    # ---------- period lists: daily (one per day) and sprint (one per sprint) ----------
+    # A period list belongs to a project; `day` is its first day and `end_day` its last.
 
-    def list_daily(self, project_id: int) -> list[TodoList]:
-        """A project's daily lists, newest day first."""
+    def list_periods(self, kind: PeriodKind, project_id: int) -> list[TodoList]:
+        """A project's daily or sprint lists, newest first."""
         with self._lock:
             rows = self.db.execute(
-                f"{LIST_SELECT} WHERE l.kind = 'daily' AND l.project_id = ? ORDER BY l.day DESC", (project_id,)
+                f"{LIST_SELECT} WHERE l.kind = ? AND l.project_id = ? ORDER BY l.day DESC", (kind, project_id)
             ).fetchall()
         return [_to_list(r) for r in rows]
 
-    def open_daily(self, project_id: int, team_id: int | None, day: date, name: str) -> TodoList:
-        """Gets (or creates) the project's daily list for `day`, then moves every unfinished
-        todo from the project's earlier daily lists onto it, oldest day first, after its own
-        todos. Runs on every open, so earlier days only ever keep finished todos."""
-        iso = day.isoformat()
+    def open_period(
+        self, kind: PeriodKind, project_id: int, team_id: int | None, start: date, end: date, name: str
+    ) -> TodoList:
+        """Gets (or creates) the project's `kind` list for the period starting `start`, then
+        moves unfinished todos from the project's other lists of that kind onto it (oldest
+        first, after its own todos). Daily takes them from earlier days; sprint from every
+        other sprint, so a moved schedule still carries everything into the current sprint.
+        Runs on every open, so other periods only ever keep finished todos."""
+        iso = start.isoformat()
         with self._lock, transaction(self.db):
             row = self.db.execute(
-                "SELECT id FROM todo_lists WHERE kind = 'daily' AND project_id = ? AND day = ?", (project_id, iso)
+                "SELECT id, name, end_day FROM todo_lists WHERE kind = ? AND project_id = ? AND day = ?",
+                (kind, project_id, iso),
             ).fetchone()
             if row:
                 list_id = row["id"]
+                if (row["name"], row["end_day"]) != (name, end.isoformat()):
+                    # The schedule changed (e.g. shifted by whole sprints): same start, new
+                    # number / length. Keep the open period's name and end in step with it.
+                    self.db.execute(
+                        "UPDATE todo_lists SET name = ?, end_day = ? WHERE id = ?", (name, end.isoformat(), list_id)
+                    )
             else:
                 (list_id,) = self.db.execute(
-                    """INSERT INTO todo_lists (name, team_id, project_id, kind, day, position)
-                       VALUES (?, ?, ?, 'daily', ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
+                    """INSERT INTO todo_lists (name, team_id, project_id, kind, day, end_day, position)
+                       VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
                        RETURNING id""",
-                    (name, team_id, project_id, iso),
+                    (name, team_id, project_id, kind, iso, end.isoformat()),
                 ).fetchone()
 
+            source = "l.day < ?" if kind == "daily" else "l.id <> ?"
             carried = self.db.execute(
-                """SELECT t.id FROM todos t JOIN todo_lists l ON l.id = t.list_id
-                   WHERE l.kind = 'daily' AND l.project_id = ? AND l.day < ? AND t.done = 0
-                   ORDER BY l.day, t.position, t.id""",
-                (project_id, iso),
+                f"""SELECT t.id FROM todos t JOIN todo_lists l ON l.id = t.list_id
+                    WHERE l.kind = ? AND l.project_id = ? AND {source} AND t.done = 0
+                    ORDER BY l.day, t.position, t.id""",
+                (kind, project_id, iso if kind == "daily" else list_id),
             ).fetchall()
             if carried:
-                (start,) = self.db.execute(
+                (first,) = self.db.execute(
                     "SELECT COALESCE(MAX(position), -1) + 1 FROM todos WHERE list_id = ?", (list_id,)
                 ).fetchone()
                 self.db.executemany(
                     "UPDATE todos SET list_id = ?, position = ? WHERE id = ?",
-                    [(list_id, start + i, r["id"]) for i, r in enumerate(carried)],
+                    [(list_id, first + i, r["id"]) for i, r in enumerate(carried)],
                 )
             row = self.db.execute(f"{LIST_SELECT} WHERE l.id = ?", (list_id,)).fetchone()
         return _to_list(row)
 
-    def team_daily_days(self, team_id: int) -> list[str]:
-        """Days that have a daily list in any of the team's projects, newest first."""
+    def team_period_starts(self, kind: PeriodKind, team_id: int) -> list[str]:
+        """First days of the periods with a `kind` list in any of the team's projects, newest first."""
         with self._lock:
             rows = self.db.execute(
-                "SELECT DISTINCT day FROM todo_lists WHERE kind = 'daily' AND team_id = ? ORDER BY day DESC",
-                (team_id,),
+                "SELECT DISTINCT day FROM todo_lists WHERE kind = ? AND team_id = ? ORDER BY day DESC",
+                (kind, team_id),
             ).fetchall()
         return [r["day"] for r in rows]
 
-    def team_daily_lists(self, team_id: int, day: date) -> list[TodoList]:
-        """That day's daily lists across the team's projects, in project order."""
+    def team_period_lists(self, kind: PeriodKind, team_id: int, start: date) -> list[TodoList]:
+        """The `kind` lists starting on `start` across the team's projects, in project order."""
         with self._lock:
             rows = self.db.execute(
                 f"""{LIST_SELECT} JOIN projects p ON p.id = l.project_id
-                    WHERE l.kind = 'daily' AND l.team_id = ? AND l.day = ?
-                    ORDER BY p.status = 'done', p.position, p.id""",
-                (team_id, day.isoformat()),
+                    WHERE l.kind = ? AND l.team_id = ? AND l.day = ?
+                    ORDER BY p.status = 'inactive', p.position, p.id""",
+                (kind, team_id, start.isoformat()),
             ).fetchall()
         return [_to_list(r) for r in rows]
 

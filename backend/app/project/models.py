@@ -14,7 +14,7 @@ PROJECT_DESCRIPTION_MAX = 2000
 
 ProjectName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=PROJECT_NAME_MAX)]
 ProjectDescription = Annotated[str, StringConstraints(strip_whitespace=True, max_length=PROJECT_DESCRIPTION_MAX)]
-ProjectStatus = Literal["active", "done"]
+ProjectStatus = Literal["active", "inactive"]  # inactive: not being worked on right now
 # A project id sent in another feature's request body (e.g. a todo list's `projectId`).
 ProjectId = Annotated[StrictInt, Field(gt=0)]
 

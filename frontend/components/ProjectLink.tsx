@@ -12,7 +12,7 @@ export function ProjectLink({ project, listCount }: { project: Project; listCoun
       params={{ projectId: project.id }}
       className={cn(
         "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
-        project.status === "done" && "opacity-70",
+        project.status === "inactive" && "opacity-70",
       )}
     >
       <FolderKanban className="size-5 shrink-0 text-muted-foreground" />

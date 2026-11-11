@@ -70,3 +70,42 @@ export const dailyApi = {
   openTeamToday: async (teamId: number): Promise<TodoList[]> =>
     unwrap(await client.POST("/api/teams/{team_id}/daily/today", { params: { path: { team_id: teamId } } })),
 };
+
+/**
+ * Sprint lists: one per sprint for every active project in a team with a sprint schedule.
+ * Opening the current sprint creates it and moves unfinished todos from other sprints onto it.
+ */
+export const sprintApi = {
+  /** The project's sprint lists, newest first. */
+  projectPeriods: async (projectId: number): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/projects/{project_id}/sprints", { params: { path: { project_id: projectId } } })),
+
+  openProjectCurrent: async (projectId: number): Promise<TodoList> =>
+    unwrap(await client.POST("/api/projects/{project_id}/sprints/current", { params: { path: { project_id: projectId } } })),
+
+  /** First days of the team's sprints that have lists, newest first. */
+  teamStarts: async (teamId: number): Promise<string[]> =>
+    unwrap(await client.GET("/api/teams/{team_id}/sprints/starts", { params: { path: { team_id: teamId } } })),
+
+  /** The lists of the sprint starting on `start` across the team's projects. */
+  teamPeriod: async (teamId: number, start: string): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/teams/{team_id}/sprints/{start}", { params: { path: { team_id: teamId, start } } })),
+
+  /** The current sprint's lists for the team's active projects. */
+  openTeamCurrent: async (teamId: number): Promise<TodoList[]> =>
+    unwrap(await client.POST("/api/teams/{team_id}/sprints/current", { params: { path: { team_id: teamId } } })),
+};
+
+/** Daily and sprint lists share one shape, so the period pages can use either. */
+export const periodApi = {
+  daily: {
+    projectPeriods: dailyApi.projectDays,
+    openProjectCurrent: dailyApi.openProjectToday,
+    teamStarts: dailyApi.teamDays,
+    teamPeriod: dailyApi.teamDay,
+    openTeamCurrent: dailyApi.openTeamToday,
+  },
+  sprint: sprintApi,
+};
+
+export type PeriodKind = keyof typeof periodApi;

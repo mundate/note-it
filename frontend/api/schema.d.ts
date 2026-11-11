@@ -40,8 +40,11 @@ export interface paths {
         delete: operations["delete_team"];
         options?: never;
         head?: never;
-        /** Rename Team */
-        patch: operations["rename_team"];
+        /**
+         * Update Team
+         * @description Rename the team and/or set its sprint schedule.
+         */
+        patch: operations["update_team"];
         trace?: never;
     };
     "/api/todo-lists": {
@@ -302,6 +305,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/sprints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Project Sprint Lists
+         * @description The project's sprint lists, newest first.
+         */
+        get: operations["list_project_sprint_lists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sprints/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open Project Sprint
+         * @description The project's list for its team's current sprint, created if needed. Every unfinished
+         *     todo from the project's other sprints is moved onto it. 400 if the project is inactive,
+         *     its team has no sprint schedule, or the first sprint hasn't started.
+         */
+        post: operations["open_project_sprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team_id}/sprints/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open Team Sprint
+         * @description The current sprint's list for each of the team's active projects (empty without a
+         *     schedule or before the first sprint).
+         */
+        post: operations["open_team_sprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team_id}/sprints/starts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Team Sprint Starts
+         * @description First days (YYYY-MM-DD) of the sprints that have lists in the team, newest first.
+         */
+        get: operations["list_team_sprint_starts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team_id}/sprints/{start}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Team Sprint
+         * @description The lists of the sprint starting on `start` across the team's projects.
+         */
+        get: operations["get_team_sprint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -330,7 +436,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "active" | "done";
+            status: "active" | "inactive";
             /** Dailyenabled */
             dailyEnabled: boolean;
             /** Createdat */
@@ -366,7 +472,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status?: "active" | "done";
+            status?: "active" | "inactive";
             /** Dailyenabled */
             dailyEnabled?: boolean;
             /** Teamid */
@@ -386,6 +492,10 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Sprintstart */
+            sprintStart: string | null;
+            /** Sprintweeks */
+            sprintWeeks: number | null;
             /** Createdat */
             createdAt: string;
             /** Updatedat */
@@ -396,10 +506,18 @@ export interface components {
             /** Name */
             name: string;
         };
-        /** TeamPatch */
+        /**
+         * TeamPatch
+         * @description Send `name` and/or the sprint schedule. `null` start and weeks clear the schedule;
+         *     after the change they must be both set or both empty.
+         */
         TeamPatch: {
             /** Name */
-            name: string;
+            name?: string;
+            /** Sprintstart */
+            sprintStart?: string | null;
+            /** Sprintweeks */
+            sprintWeeks?: number | null;
         };
         /**
          * Todo
@@ -439,9 +557,11 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "standard" | "daily";
+            kind: "standard" | "daily" | "sprint";
             /** Day */
             day: string | null;
+            /** Endday */
+            endDay: string | null;
             /** Opencount */
             openCount: number;
             /** Donecount */
@@ -641,7 +761,7 @@ export interface operations {
             };
         };
     };
-    rename_team: {
+    update_team: {
         parameters: {
             query?: never;
             header?: never;
@@ -1589,6 +1709,225 @@ export interface operations {
             path: {
                 team_id: number;
                 day: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"][];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_project_sprint_lists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"][];
+                };
+            };
+            /** @description Project not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    open_project_sprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Project not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    open_team_sprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"][];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_team_sprint_starts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Team not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_team_sprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+                start: string;
             };
             cookie?: never;
         };

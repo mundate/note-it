@@ -37,8 +37,9 @@ def get_team(team_id: int, service: Service) -> Team:
 
 
 @router.patch("/{team_id}", responses={**BAD_REQUEST, **TEAM_NOT_FOUND})
-def rename_team(team_id: int, body: TeamPatch, service: Service) -> Team:
-    return service.rename_team(team_id, body.name)
+def update_team(team_id: int, body: TeamPatch, service: Service) -> Team:
+    """Rename the team and/or set its sprint schedule."""
+    return service.update_team(team_id, **body.model_dump(include=body.model_fields_set))
 
 
 @router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT, responses=TEAM_NOT_FOUND)

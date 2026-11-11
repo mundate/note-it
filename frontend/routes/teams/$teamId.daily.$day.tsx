@@ -1,6 +1,6 @@
 import { Placeholder } from "@/components/Placeholder";
 import { isValidDay } from "@/lib/day";
-import { TeamDailyPage } from "@/pages/team-daily/TeamDailyPage";
+import { TeamPeriodPage } from "@/pages/team-period/TeamPeriodPage";
 import { createFileRoute } from "@tanstack/react-router";
 
 /** The team's combined daily view for one day, e.g. /teams/1/daily/2026-11-10. */
@@ -18,5 +18,5 @@ function DayRoute() {
     return <Placeholder title="Page not found" message="There's nothing at this address." />;
   }
   // `key` gives each day fresh page state when stepping between days.
-  return <TeamDailyPage key={`${teamId}/${day}`} teamId={teamId} day={day} />;
+  return <TeamPeriodPage kind="daily" key={`${teamId}/${day}`} teamId={teamId} start={day} />;
 }

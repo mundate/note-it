@@ -16,7 +16,7 @@ def test_project_lifecycle(svc) -> None:  # noqa: ANN001
         team, "Invoices v2", "2026-12-15", "active", False,
     )
     onboarding = svc.projects.create_project(team, "Onboarding")
-    svc.projects.update_project(billing.id, status="done")
+    svc.projects.update_project(billing.id, status="inactive")
     # Active first, then done.
     assert [p.name for p in svc.projects.list_for_team(team)] == ["Onboarding", "Billing"]
 
@@ -91,9 +91,9 @@ def test_project_routes(client: TestClient) -> None:
                 {"deadline": "nope"}, {"teamId": 0}):
         assert patch(bad).status_code == 400, bad
     assert patch({"teamId": 999}).status_code == 404
-    assert patch({"status": "done", "dailyEnabled": True, "deadline": None}).json()["status"] == "done"
+    assert patch({"status": "inactive", "dailyEnabled": True, "deadline": None}).json()["status"] == "inactive"
     got = client.get(f"/api/projects/{pid}").json()
-    assert (got["status"], got["dailyEnabled"], got["deadline"]) == ("done", True, None)
+    assert (got["status"], got["dailyEnabled"], got["deadline"]) == ("inactive", True, None)
     assert patch({"teamId": None}).json()["teamId"] is None
     assert [p["id"] for p in client.get("/api/projects/teamless").json()] == [pid]
 

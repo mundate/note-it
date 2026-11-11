@@ -20,8 +20,12 @@ import { Route as ProjectsProjectIdIndexRouteImport } from "./routes/projects/$p
 import { Route as TeamsTeamIdIndexRouteImport } from "./routes/teams/$teamId.index"
 import { Route as ProjectsProjectIdDailyIndexRouteImport } from "./routes/projects/$projectId.daily.index"
 import { Route as ProjectsProjectIdDailyDayRouteImport } from "./routes/projects/$projectId.daily.$day"
+import { Route as ProjectsProjectIdSprintIndexRouteImport } from "./routes/projects/$projectId.sprint.index"
+import { Route as ProjectsProjectIdSprintStartRouteImport } from "./routes/projects/$projectId.sprint.$start"
 import { Route as TeamsTeamIdDailyIndexRouteImport } from "./routes/teams/$teamId.daily.index"
 import { Route as TeamsTeamIdDailyDayRouteImport } from "./routes/teams/$teamId.daily.$day"
+import { Route as TeamsTeamIdSprintIndexRouteImport } from "./routes/teams/$teamId.sprint.index"
+import { Route as TeamsTeamIdSprintStartRouteImport } from "./routes/teams/$teamId.sprint.$start"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -80,6 +84,18 @@ const ProjectsProjectIdDailyDayRoute =
     path: "/projects/$projectId/daily/$day",
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProjectsProjectIdSprintIndexRoute =
+  ProjectsProjectIdSprintIndexRouteImport.update({
+    id: "/projects/$projectId/sprint/",
+    path: "/projects/$projectId/sprint/",
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ProjectsProjectIdSprintStartRoute =
+  ProjectsProjectIdSprintStartRouteImport.update({
+    id: "/projects/$projectId/sprint/$start",
+    path: "/projects/$projectId/sprint/$start",
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const TeamsTeamIdDailyIndexRoute = TeamsTeamIdDailyIndexRouteImport.update({
   id: "/teams/$teamId/daily/",
   path: "/teams/$teamId/daily/",
@@ -88,6 +104,16 @@ const TeamsTeamIdDailyIndexRoute = TeamsTeamIdDailyIndexRouteImport.update({
 const TeamsTeamIdDailyDayRoute = TeamsTeamIdDailyDayRouteImport.update({
   id: "/teams/$teamId/daily/$day",
   path: "/teams/$teamId/daily/$day",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdSprintIndexRoute = TeamsTeamIdSprintIndexRouteImport.update({
+  id: "/teams/$teamId/sprint/",
+  path: "/teams/$teamId/sprint/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdSprintStartRoute = TeamsTeamIdSprintStartRouteImport.update({
+  id: "/teams/$teamId/sprint/$start",
+  path: "/teams/$teamId/sprint/$start",
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -102,9 +128,13 @@ export interface FileRoutesByFullPath {
   "/projects/$projectId/": typeof ProjectsProjectIdIndexRoute
   "/teams/$teamId/": typeof TeamsTeamIdIndexRoute
   "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/projects/$projectId/sprint/$start": typeof ProjectsProjectIdSprintStartRoute
   "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/teams/$teamId/sprint/$start": typeof TeamsTeamIdSprintStartRoute
   "/projects/$projectId/daily/": typeof ProjectsProjectIdDailyIndexRoute
+  "/projects/$projectId/sprint/": typeof ProjectsProjectIdSprintIndexRoute
   "/teams/$teamId/daily/": typeof TeamsTeamIdDailyIndexRoute
+  "/teams/$teamId/sprint/": typeof TeamsTeamIdSprintIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
@@ -117,9 +147,13 @@ export interface FileRoutesByTo {
   "/projects/$projectId": typeof ProjectsProjectIdIndexRoute
   "/teams/$teamId": typeof TeamsTeamIdIndexRoute
   "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/projects/$projectId/sprint/$start": typeof ProjectsProjectIdSprintStartRoute
   "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/teams/$teamId/sprint/$start": typeof TeamsTeamIdSprintStartRoute
   "/projects/$projectId/daily": typeof ProjectsProjectIdDailyIndexRoute
+  "/projects/$projectId/sprint": typeof ProjectsProjectIdSprintIndexRoute
   "/teams/$teamId/daily": typeof TeamsTeamIdDailyIndexRoute
+  "/teams/$teamId/sprint": typeof TeamsTeamIdSprintIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,9 +167,13 @@ export interface FileRoutesById {
   "/projects/$projectId/": typeof ProjectsProjectIdIndexRoute
   "/teams/$teamId/": typeof TeamsTeamIdIndexRoute
   "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/projects/$projectId/sprint/$start": typeof ProjectsProjectIdSprintStartRoute
   "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/teams/$teamId/sprint/$start": typeof TeamsTeamIdSprintStartRoute
   "/projects/$projectId/daily/": typeof ProjectsProjectIdDailyIndexRoute
+  "/projects/$projectId/sprint/": typeof ProjectsProjectIdSprintIndexRoute
   "/teams/$teamId/daily/": typeof TeamsTeamIdDailyIndexRoute
+  "/teams/$teamId/sprint/": typeof TeamsTeamIdSprintIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,9 +188,13 @@ export interface FileRouteTypes {
     | "/projects/$projectId/"
     | "/teams/$teamId/"
     | "/projects/$projectId/daily/$day"
+    | "/projects/$projectId/sprint/$start"
     | "/teams/$teamId/daily/$day"
+    | "/teams/$teamId/sprint/$start"
     | "/projects/$projectId/daily/"
+    | "/projects/$projectId/sprint/"
     | "/teams/$teamId/daily/"
+    | "/teams/$teamId/sprint/"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
@@ -165,9 +207,13 @@ export interface FileRouteTypes {
     | "/projects/$projectId"
     | "/teams/$teamId"
     | "/projects/$projectId/daily/$day"
+    | "/projects/$projectId/sprint/$start"
     | "/teams/$teamId/daily/$day"
+    | "/teams/$teamId/sprint/$start"
     | "/projects/$projectId/daily"
+    | "/projects/$projectId/sprint"
     | "/teams/$teamId/daily"
+    | "/teams/$teamId/sprint"
   id:
     | "__root__"
     | "/"
@@ -180,9 +226,13 @@ export interface FileRouteTypes {
     | "/projects/$projectId/"
     | "/teams/$teamId/"
     | "/projects/$projectId/daily/$day"
+    | "/projects/$projectId/sprint/$start"
     | "/teams/$teamId/daily/$day"
+    | "/teams/$teamId/sprint/$start"
     | "/projects/$projectId/daily/"
+    | "/projects/$projectId/sprint/"
     | "/teams/$teamId/daily/"
+    | "/teams/$teamId/sprint/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,9 +246,13 @@ export interface RootRouteChildren {
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
   TeamsTeamIdIndexRoute: typeof TeamsTeamIdIndexRoute
   ProjectsProjectIdDailyDayRoute: typeof ProjectsProjectIdDailyDayRoute
+  ProjectsProjectIdSprintStartRoute: typeof ProjectsProjectIdSprintStartRoute
   TeamsTeamIdDailyDayRoute: typeof TeamsTeamIdDailyDayRoute
+  TeamsTeamIdSprintStartRoute: typeof TeamsTeamIdSprintStartRoute
   ProjectsProjectIdDailyIndexRoute: typeof ProjectsProjectIdDailyIndexRoute
+  ProjectsProjectIdSprintIndexRoute: typeof ProjectsProjectIdSprintIndexRoute
   TeamsTeamIdDailyIndexRoute: typeof TeamsTeamIdDailyIndexRoute
+  TeamsTeamIdSprintIndexRoute: typeof TeamsTeamIdSprintIndexRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -280,6 +334,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ProjectsProjectIdDailyDayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/projects/$projectId/sprint/": {
+      id: "/projects/$projectId/sprint/"
+      path: "/projects/$projectId/sprint"
+      fullPath: "/projects/$projectId/sprint/"
+      preLoaderRoute: typeof ProjectsProjectIdSprintIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/projects/$projectId/sprint/$start": {
+      id: "/projects/$projectId/sprint/$start"
+      path: "/projects/$projectId/sprint/$start"
+      fullPath: "/projects/$projectId/sprint/$start"
+      preLoaderRoute: typeof ProjectsProjectIdSprintStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/teams/$teamId/daily/": {
       id: "/teams/$teamId/daily/"
       path: "/teams/$teamId/daily"
@@ -292,6 +360,20 @@ declare module "@tanstack/react-router" {
       path: "/teams/$teamId/daily/$day"
       fullPath: "/teams/$teamId/daily/$day"
       preLoaderRoute: typeof TeamsTeamIdDailyDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId/sprint/": {
+      id: "/teams/$teamId/sprint/"
+      path: "/teams/$teamId/sprint"
+      fullPath: "/teams/$teamId/sprint/"
+      preLoaderRoute: typeof TeamsTeamIdSprintIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId/sprint/$start": {
+      id: "/teams/$teamId/sprint/$start"
+      path: "/teams/$teamId/sprint/$start"
+      fullPath: "/teams/$teamId/sprint/$start"
+      preLoaderRoute: typeof TeamsTeamIdSprintStartRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -308,9 +390,13 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   TeamsTeamIdIndexRoute: TeamsTeamIdIndexRoute,
   ProjectsProjectIdDailyDayRoute: ProjectsProjectIdDailyDayRoute,
+  ProjectsProjectIdSprintStartRoute: ProjectsProjectIdSprintStartRoute,
   TeamsTeamIdDailyDayRoute: TeamsTeamIdDailyDayRoute,
+  TeamsTeamIdSprintStartRoute: TeamsTeamIdSprintStartRoute,
   ProjectsProjectIdDailyIndexRoute: ProjectsProjectIdDailyIndexRoute,
+  ProjectsProjectIdSprintIndexRoute: ProjectsProjectIdSprintIndexRoute,
   TeamsTeamIdDailyIndexRoute: TeamsTeamIdDailyIndexRoute,
+  TeamsTeamIdSprintIndexRoute: TeamsTeamIdSprintIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

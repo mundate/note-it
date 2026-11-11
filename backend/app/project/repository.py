@@ -41,7 +41,7 @@ class ProjectRepo:
         args = (team_id,) if team_id is not None else ()
         with self._lock:
             rows = self.db.execute(
-                f"SELECT * FROM projects WHERE {where} ORDER BY status = 'done', position, id", args
+                f"SELECT * FROM projects WHERE {where} ORDER BY status = 'inactive', position, id", args
             ).fetchall()
         return [_to_project(r) for r in rows]
 

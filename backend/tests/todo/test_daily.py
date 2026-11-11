@@ -105,7 +105,7 @@ def test_team_view_combines_active_enabled_projects(svc, team: int, project: int
     svc.projects.update_project(second, daily_enabled=True)
     svc.projects.create_project(team, "No daily")
     done = svc.projects.create_project(team, "Done").id
-    svc.projects.update_project(done, daily_enabled=True, status="done")
+    svc.projects.update_project(done, daily_enabled=True, status="inactive")
 
     today = svc.todos.open_team_today(team)
     assert [l.project_id for l in today] == [project, second]

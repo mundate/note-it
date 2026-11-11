@@ -144,8 +144,9 @@
         "tags": [
           "teams"
         ],
-        "summary": "Rename Team",
-        "operationId": "rename_team",
+        "summary": "Update Team",
+        "description": "Rename the team and/or set its sprint schedule.",
+        "operationId": "update_team",
         "parameters": [
           {
             "name": "team_id",
@@ -1549,6 +1550,317 @@
           }
         }
       }
+    },
+    "/api/projects/{project_id}/sprints": {
+      "get": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "List Project Sprint Lists",
+        "description": "The project's sprint lists, newest first.",
+        "operationId": "list_project_sprint_lists",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoList"
+                  },
+                  "title": "Response List Project Sprint Lists"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/sprints/current": {
+      "post": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Open Project Sprint",
+        "description": "The project's list for its team's current sprint, created if needed. Every unfinished\ntodo from the project's other sprints is moved onto it. 400 if the project is inactive,\nits team has no sprint schedule, or the first sprint hasn't started.",
+        "operationId": "open_project_sprint",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{team_id}/sprints/current": {
+      "post": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Open Team Sprint",
+        "description": "The current sprint's list for each of the team's active projects (empty without a\nschedule or before the first sprint).",
+        "operationId": "open_team_sprint",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoList"
+                  },
+                  "title": "Response Open Team Sprint"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{team_id}/sprints/starts": {
+      "get": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "List Team Sprint Starts",
+        "description": "First days (YYYY-MM-DD) of the sprints that have lists in the team, newest first.",
+        "operationId": "list_team_sprint_starts",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response List Team Sprint Starts"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{team_id}/sprints/{start}": {
+      "get": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Get Team Sprint",
+        "description": "The lists of the sprint starting on `start` across the team's projects.",
+        "operationId": "get_team_sprint",
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Team Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoList"
+                  },
+                  "title": "Response Get Team Sprint"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1607,7 +1919,7 @@
             "type": "string",
             "enum": [
               "active",
-              "done"
+              "inactive"
             ],
             "title": "Status"
           },
@@ -1700,7 +2012,7 @@
             "type": "string",
             "enum": [
               "active",
-              "done"
+              "inactive"
             ],
             "title": "Status"
           },
@@ -1753,6 +2065,28 @@
             "type": "string",
             "title": "Name"
           },
+          "sprintStart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprintstart"
+          },
+          "sprintWeeks": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprintweeks"
+          },
           "createdAt": {
             "type": "string",
             "title": "Createdat"
@@ -1766,6 +2100,8 @@
         "required": [
           "id",
           "name",
+          "sprintStart",
+          "sprintWeeks",
           "createdAt",
           "updatedAt"
         ],
@@ -1793,13 +2129,36 @@
             "maxLength": 100,
             "minLength": 1,
             "title": "Name"
+          },
+          "sprintStart": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprintstart"
+          },
+          "sprintWeeks": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 8.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sprintweeks"
           }
         },
         "type": "object",
-        "required": [
-          "name"
-        ],
-        "title": "TeamPatch"
+        "title": "TeamPatch",
+        "description": "Send `name` and/or the sprint schedule. `null` start and weeks clear the schedule;\nafter the change they must be both set or both empty."
       },
       "Todo": {
         "properties": {
@@ -1886,7 +2245,8 @@
             "type": "string",
             "enum": [
               "standard",
-              "daily"
+              "daily",
+              "sprint"
             ],
             "title": "Kind"
           },
@@ -1900,6 +2260,17 @@
               }
             ],
             "title": "Day"
+          },
+          "endDay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endday"
           },
           "openCount": {
             "type": "integer",
@@ -1926,6 +2297,7 @@
           "projectId",
           "kind",
           "day",
+          "endDay",
           "openCount",
           "doneCount",
           "createdAt",

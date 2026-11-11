@@ -39,6 +39,8 @@ router = APIRouter(prefix="/api/todo-lists", tags=["todos"])
 # depends on project and team, never the reverse).
 project_daily_router = APIRouter(prefix="/api/projects/{project_id}/daily", tags=["todos"])
 team_daily_router = APIRouter(prefix="/api/teams/{team_id}/daily", tags=["todos"])
+project_sprint_router = APIRouter(prefix="/api/projects/{project_id}/sprints", tags=["todos"])
+team_sprint_router = APIRouter(prefix="/api/teams/{team_id}/sprints", tags=["todos"])
 
 
 # ---------- lists ----------
@@ -137,3 +139,39 @@ def list_team_daily_days(team_id: int, service: Service) -> list[str]:
 def get_team_daily(team_id: int, day: date, service: Service) -> list[TodoList]:
     """That day's daily lists across the team's projects."""
     return service.team_daily(team_id, day)
+
+
+# ---------- sprint lists ----------
+
+
+@project_sprint_router.get("", responses=PROJECT_NOT_FOUND)
+def list_project_sprint_lists(project_id: int, service: Service) -> list[TodoList]:
+    """The project's sprint lists, newest first."""
+    return service.list_project_sprints(project_id)
+
+
+@project_sprint_router.post("/current", responses={**BAD_REQUEST, **PROJECT_NOT_FOUND})
+def open_project_sprint(project_id: int, service: Service) -> TodoList:
+    """The project's list for its team's current sprint, created if needed. Every unfinished
+    todo from the project's other sprints is moved onto it. 400 if the project is inactive,
+    its team has no sprint schedule, or the first sprint hasn't started."""
+    return service.open_project_sprint(project_id)
+
+
+@team_sprint_router.post("/current", responses=TEAM_NOT_FOUND)
+def open_team_sprint(team_id: int, service: Service) -> list[TodoList]:
+    """The current sprint's list for each of the team's active projects (empty without a
+    schedule or before the first sprint)."""
+    return service.open_team_sprint(team_id)
+
+
+@team_sprint_router.get("/starts", responses=TEAM_NOT_FOUND)
+def list_team_sprint_starts(team_id: int, service: Service) -> list[str]:
+    """First days (YYYY-MM-DD) of the sprints that have lists in the team, newest first."""
+    return service.team_sprint_starts(team_id)
+
+
+@team_sprint_router.get("/{start}", responses={**BAD_REQUEST, **TEAM_NOT_FOUND})
+def get_team_sprint(team_id: int, start: date, service: Service) -> list[TodoList]:
+    """The lists of the sprint starting on `start` across the team's projects."""
+    return service.team_sprint(team_id, start)

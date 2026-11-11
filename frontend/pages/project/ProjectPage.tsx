@@ -6,7 +6,9 @@ import { TodoListLink } from "@/components/TodoListLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CalendarCheck, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CalendarRange, ChevronRight, Plus } from "lucide-react";
+import { toDay } from "@/lib/day";
+import { formatRange, sprintOn } from "@/lib/sprints";
 import { useEffect, useState, type FormEvent } from "react";
 import { ProjectDetails } from "./components/ProjectDetails";
 import { ProjectHeader } from "./components/ProjectHeader";
@@ -70,6 +72,9 @@ export function ProjectPage({ projectId }: { projectId: number }) {
   };
 
   const team = teams?.find(t => t.id === project?.teamId);
+  const currentSprint = team?.sprintStart && team.sprintWeeks ? sprintOn(toDay(new Date()), team.sprintStart, team.sprintWeeks) : null;
+  const card =
+    "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
   const backLink =
     "flex w-fit items-center gap-1 rounded-sm text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -90,7 +95,7 @@ export function ProjectPage({ projectId }: { projectId: number }) {
           project={project}
           listCount={lists?.length ?? 0}
           onRename={name => update({ name })}
-          onToggleDone={() => update({ status: project.status === "done" ? "active" : "done" })}
+          onToggleActive={() => update({ status: project.status === "inactive" ? "active" : "inactive" })}
           onDelete={deleteProject}
         />
       ) : (
@@ -146,6 +151,33 @@ export function ProjectPage({ projectId }: { projectId: number }) {
                 Turn it on to get a fresh list of what needs doing each day; unfinished tasks carry over.{" "}
                 <Link to="/projects/$projectId/daily" params={{ projectId }} className="underline underline-offset-2 hover:text-foreground">
                   Past days
+                </Link>
+              </p>
+            )}
+          </section>
+
+          <section aria-label="Sprint" className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold">Sprint</h2>
+            {currentSprint && project.status === "active" ? (
+              <Link to="/projects/$projectId/sprint" params={{ projectId }} className={card}>
+                <CalendarRange className="size-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">Sprint {currentSprint.number}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatRange(currentSprint.start, currentSprint.end)} · unfinished tasks carry over to the next sprint.
+                  </div>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {project.status !== "active"
+                  ? "Inactive projects don't get new sprints."
+                  : !team?.sprintStart
+                    ? "Set a sprint schedule on the team page to start sprints."
+                    : "The team's first sprint hasn't started yet."}{" "}
+                <Link to="/projects/$projectId/sprint" params={{ projectId }} className="underline underline-offset-2 hover:text-foreground">
+                  Past sprints
                 </Link>
               </p>
             )}
