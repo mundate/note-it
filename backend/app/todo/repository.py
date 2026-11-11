@@ -1,12 +1,31 @@
-"""Todo repository: the only place that knows about the `todos` table."""
+"""Todo repository: the only place that knows about the `todo_lists` and `todos` tables."""
 
 import sqlite3
 import threading
 
 from ..core.db import transaction
-from .models import Todo
+from .models import Todo, TodoList
 
 NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+
+# A list row plus its todo counts.
+LIST_SELECT = """
+    SELECT l.*,
+           (SELECT COUNT(*) FROM todos t WHERE t.list_id = l.id AND t.done = 0) AS open_count,
+           (SELECT COUNT(*) FROM todos t WHERE t.list_id = l.id AND t.done = 1) AS done_count
+    FROM todo_lists l
+"""
+
+
+def _to_list(row: sqlite3.Row) -> TodoList:
+    return TodoList(
+        id=row["id"],
+        name=row["name"],
+        open_count=row["open_count"],
+        done_count=row["done_count"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 def _to_todo(row: sqlite3.Row) -> Todo:
@@ -26,45 +45,94 @@ class TodoRepo:
         # (and each transaction) on the shared connection atomic.
         self._lock = threading.Lock()
 
-    def list_todos(self) -> list[Todo]:
+    # ---------- lists ----------
+
+    def list_lists(self) -> list[TodoList]:
         with self._lock:
-            rows = self.db.execute("SELECT * FROM todos ORDER BY done, position, id").fetchall()
+            rows = self.db.execute(f"{LIST_SELECT} ORDER BY l.position, l.id").fetchall()
+        return [_to_list(r) for r in rows]
+
+    def get_list(self, list_id: int) -> TodoList | None:
+        with self._lock:
+            row = self.db.execute(f"{LIST_SELECT} WHERE l.id = ?", (list_id,)).fetchone()
+        return _to_list(row) if row else None
+
+    def create_list(self, name: str) -> TodoList:
+        with self._lock:
+            (list_id,) = self.db.execute(
+                """INSERT INTO todo_lists (name, position)
+                   VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
+                   RETURNING id""",
+                (name,),
+            ).fetchone()
+        list_ = self.get_list(list_id)
+        assert list_ is not None
+        return list_
+
+    def rename_list(self, list_id: int, name: str) -> TodoList | None:
+        """Returns the renamed list, or None if it doesn't exist."""
+        with self._lock:
+            changed = self.db.execute(
+                f"UPDATE todo_lists SET name = ?, updated_at = {NOW} WHERE id = ?", (name, list_id)
+            ).rowcount
+        return self.get_list(list_id) if changed else None
+
+    def delete_list(self, list_id: int) -> bool:
+        """Deletes the list and its todos. Returns False if the list didn't exist."""
+        with self._lock:
+            return self.db.execute("DELETE FROM todo_lists WHERE id = ?", (list_id,)).rowcount > 0
+
+    # ---------- todos (always scoped to a list) ----------
+
+    def list_todos(self, list_id: int) -> list[Todo]:
+        with self._lock:
+            rows = self.db.execute(
+                "SELECT * FROM todos WHERE list_id = ? ORDER BY done, position, id", (list_id,)
+            ).fetchall()
         return [_to_todo(r) for r in rows]
 
-    def create_todo(self, text: str) -> Todo:
+    def create_todo(self, list_id: int, text: str) -> Todo:
         with self._lock:
             row = self.db.execute(
-                """INSERT INTO todos (text, position)
-                   VALUES (?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todos))
+                """INSERT INTO todos (list_id, text, position)
+                   VALUES (?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todos WHERE list_id = ?))
                    RETURNING *""",
-                (text,),
+                (list_id, text, list_id),
             ).fetchone()
         return _to_todo(row)
 
-    def update_todo(self, todo_id: int, *, text: str | None = None, done: bool | None = None) -> Todo | None:
-        """Returns the updated todo, or None if it doesn't exist."""
+    def update_todo(
+        self, list_id: int, todo_id: int, *, text: str | None = None, done: bool | None = None
+    ) -> Todo | None:
+        """Returns the updated todo, or None if it doesn't exist in that list."""
         with self._lock:
             row = self.db.execute(
                 f"""UPDATE todos
                     SET text       = COALESCE(?, text),
                         done       = COALESCE(?, done),
                         updated_at = {NOW}
-                    WHERE id = ?
+                    WHERE id = ? AND list_id = ?
                     RETURNING *""",
-                (text, None if done is None else int(done), todo_id),
+                (text, None if done is None else int(done), todo_id, list_id),
             ).fetchone()
         return _to_todo(row) if row else None
 
-    def delete_todo(self, todo_id: int) -> bool:
-        """Returns False if the todo didn't exist."""
+    def delete_todo(self, list_id: int, todo_id: int) -> bool:
+        """Returns False if the todo didn't exist in that list."""
         with self._lock:
-            return self.db.execute("DELETE FROM todos WHERE id = ?", (todo_id,)).rowcount > 0
+            return (
+                self.db.execute("DELETE FROM todos WHERE id = ? AND list_id = ?", (todo_id, list_id)).rowcount > 0
+            )
 
-    def reorder_todos(self, ids: list[int]) -> list[int]:
-        """`ids` move to the front in the given order; all other todos keep their relative
-        order after them. Returns the ids that don't exist, changing nothing if there are any."""
+    def reorder_todos(self, list_id: int, ids: list[int]) -> list[int]:
+        """`ids` move to the front of the list in the given order; the list's other todos keep
+        their relative order after them. Returns the ids that aren't in the list, changing
+        nothing if there are any."""
         with self._lock:
-            existing = [r["id"] for r in self.db.execute("SELECT id FROM todos ORDER BY position, id")]
+            existing = [
+                r["id"]
+                for r in self.db.execute("SELECT id FROM todos WHERE list_id = ? ORDER BY position, id", (list_id,))
+            ]
             known = set(existing)
             missing = [i for i in ids if i not in known]
             if missing:

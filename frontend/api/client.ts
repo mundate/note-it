@@ -9,10 +9,21 @@ import type { components, paths } from "./schema";
 export const client = createClient<paths>({ baseUrl: "/" });
 
 type Schemas = components["schemas"];
+export type TodoList = Schemas["TodoList"];
 export type Todo = Schemas["Todo"];
 export type TodoCreate = Schemas["TodoCreate"];
 export type TodoPatch = Schemas["TodoPatch"];
 export type ErrorResponse = Schemas["ErrorResponse"];
 
-/** Max todo length, read from the backend's validation rules. */
+/** Returns `data`, or throws the API's `{ error }` message. */
+export function unwrap<T>(result: { data?: T; error?: ErrorResponse | unknown; response: Response }): T {
+  if (result.error !== undefined || !result.response.ok) {
+    const message = (result.error as ErrorResponse | undefined)?.error;
+    throw new Error(message ?? `Request failed (${result.response.status})`);
+  }
+  return result.data as T;
+}
+
+// Max lengths, read from the backend's validation rules.
 export const TODO_TEXT_MAX: number = spec.components.schemas.TodoCreate.properties.text.maxLength;
+export const TODO_LIST_NAME_MAX: number = spec.components.schemas.TodoListCreate.properties.name.maxLength;

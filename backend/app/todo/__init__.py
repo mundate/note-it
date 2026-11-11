@@ -1,4 +1,4 @@
-"""Todo feature: models, repository (SQL), service (rules), and REST routes under /api/todos."""
+"""Todo feature: models, repository (SQL), service (rules), and REST routes under /api/todo-lists."""
 
 from .repository import TodoRepo
 from .routes import router

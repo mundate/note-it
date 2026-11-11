@@ -13,7 +13,8 @@ import { Route as IndexRouteImport } from "./routes/index"
 import { Route as DiagramsRouteImport } from "./routes/diagrams"
 import { Route as NotesRouteImport } from "./routes/notes"
 import { Route as SettingsRouteImport } from "./routes/settings"
-import { Route as TodosRouteImport } from "./routes/todos"
+import { Route as TodosIndexRouteImport } from "./routes/todos/index"
+import { Route as TodosListIdRouteImport } from "./routes/todos/$listId"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -35,9 +36,14 @@ const SettingsRoute = SettingsRouteImport.update({
   path: "/settings",
   getParentRoute: () => rootRouteImport,
 } as any)
-const TodosRoute = TodosRouteImport.update({
-  id: "/todos",
-  path: "/todos",
+const TodosIndexRoute = TodosIndexRouteImport.update({
+  id: "/todos/",
+  path: "/todos/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TodosListIdRoute = TodosListIdRouteImport.update({
+  id: "/todos/$listId",
+  path: "/todos/$listId",
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -46,14 +52,16 @@ export interface FileRoutesByFullPath {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/todos": typeof TodosRoute
+  "/todos/$listId": typeof TodosListIdRoute
+  "/todos/": typeof TodosIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/todos": typeof TodosRoute
+  "/todos/$listId": typeof TodosListIdRoute
+  "/todos": typeof TodosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +69,23 @@ export interface FileRoutesById {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/todos": typeof TodosRoute
+  "/todos/$listId": typeof TodosListIdRoute
+  "/todos/": typeof TodosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/diagrams" | "/notes" | "/settings" | "/todos"
+  fullPaths:
+    "/" | "/diagrams" | "/notes" | "/settings" | "/todos/$listId" | "/todos/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/diagrams" | "/notes" | "/settings" | "/todos"
-  id: "__root__" | "/" | "/diagrams" | "/notes" | "/settings" | "/todos"
+  to: "/" | "/diagrams" | "/notes" | "/settings" | "/todos/$listId" | "/todos"
+  id:
+    | "__root__"
+    | "/"
+    | "/diagrams"
+    | "/notes"
+    | "/settings"
+    | "/todos/$listId"
+    | "/todos/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,7 +93,8 @@ export interface RootRouteChildren {
   DiagramsRoute: typeof DiagramsRoute
   NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
-  TodosRoute: typeof TodosRoute
+  TodosListIdRoute: typeof TodosListIdRoute
+  TodosIndexRoute: typeof TodosIndexRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -109,11 +127,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/todos": {
-      id: "/todos"
+    "/todos/": {
+      id: "/todos/"
       path: "/todos"
-      fullPath: "/todos"
-      preLoaderRoute: typeof TodosRouteImport
+      fullPath: "/todos/"
+      preLoaderRoute: typeof TodosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/todos/$listId": {
+      id: "/todos/$listId"
+      path: "/todos/$listId"
+      fullPath: "/todos/$listId"
+      preLoaderRoute: typeof TodosListIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -124,7 +149,8 @@ const rootRouteChildren: RootRouteChildren = {
   DiagramsRoute: DiagramsRoute,
   NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
-  TodosRoute: TodosRoute,
+  TodosListIdRoute: TodosListIdRoute,
+  TodosIndexRoute: TodosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

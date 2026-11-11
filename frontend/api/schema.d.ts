@@ -4,7 +4,44 @@
  */
 
 export interface paths {
-    "/api/todos": {
+    "/api/todo-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Todo Lists */
+        get: operations["list_todo_lists"];
+        put?: never;
+        /** Create Todo List */
+        post: operations["create_todo_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/todo-lists/{list_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Todo List */
+        get: operations["get_todo_list"];
+        put?: never;
+        post?: never;
+        /** Delete Todo List */
+        delete: operations["delete_todo_list"];
+        options?: never;
+        head?: never;
+        /** Rename Todo List */
+        patch: operations["rename_todo_list"];
+        trace?: never;
+    };
+    "/api/todo-lists/{list_id}/todos": {
         parameters: {
             query?: never;
             header?: never;
@@ -22,7 +59,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/todos/reorder": {
+    "/api/todo-lists/{list_id}/todos/reorder": {
         parameters: {
             query?: never;
             header?: never;
@@ -39,7 +76,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/todos/{todo_id}": {
+    "/api/todo-lists/{list_id}/todos/{todo_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -98,6 +135,34 @@ export interface components {
             /** Text */
             text: string;
         };
+        /**
+         * TodoList
+         * @description A todo list as returned by the API, with counts of its todos.
+         */
+        TodoList: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Opencount */
+            openCount: number;
+            /** Donecount */
+            doneCount: number;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /** TodoListCreate */
+        TodoListCreate: {
+            /** Name */
+            name: string;
+        };
+        /** TodoListPatch */
+        TodoListPatch: {
+            /** Name */
+            name: string;
+        };
         /** TodoPatch */
         TodoPatch: {
             /** Text */
@@ -114,7 +179,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_todos: {
+    list_todo_lists: {
         parameters: {
             query?: never;
             header?: never;
@@ -129,7 +194,220 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["TodoList"][];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_todo_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoListCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_todo_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"];
+                };
+            };
+            /** @description Todo list not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_todo_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Todo list not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    rename_todo_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoListPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoList"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Todo list not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_todos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["Todo"][];
+                };
+            };
+            /** @description Todo list not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Error */
@@ -147,7 +425,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                list_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
@@ -174,6 +454,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Todo list not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Error */
             default: {
                 headers: {
@@ -189,7 +478,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                list_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
@@ -216,7 +507,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Todo not found */
+            /** @description Todo list or todo not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -241,6 +532,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                list_id: number;
                 todo_id: number;
             };
             cookie?: never;
@@ -254,7 +546,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Todo not found */
+            /** @description Todo list or todo not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -279,6 +571,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                list_id: number;
                 todo_id: number;
             };
             cookie?: never;
@@ -307,7 +600,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Todo not found */
+            /** @description Todo list or todo not found */
             404: {
                 headers: {
                     [name: string]: unknown;

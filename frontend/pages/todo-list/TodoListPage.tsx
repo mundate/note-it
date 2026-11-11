@@ -1,21 +1,52 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TODO_TEXT_MAX, type Todo, type TodoPatch } from "@/api/client";
-import { Plus } from "lucide-react";
+import { TODO_TEXT_MAX, type Todo, type TodoList, type TodoPatch } from "@/api/client";
+import { todoApi as todoApiFor, todoListApi } from "@/api/todos";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { todoApi } from "./api";
+import { ListHeader } from "./components/ListHeader";
 import { SortableSection } from "./components/SortableSection";
 
-export function TodosPage() {
+/** One todo list. The route renders it with `key={listId}`, so state resets between lists. */
+export function TodoListPage({ listId }: { listId: number }) {
+  const navigate = useNavigate();
+  const todoApi = todoApiFor(listId);
+  const [list, setList] = useState<TodoList | null>(null);
   const [todos, setTodos] = useState<Todo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
 
   const load = () => {
     setError(null);
-    todoApi.list().then(setTodos, e => setError(e.message));
+    Promise.all([todoListApi.get(listId), todoApi.list()]).then(([l, t]) => {
+      setList(l);
+      setTodos(t);
+    }, e => setError(e.message));
   };
-  useEffect(load, []);
+  useEffect(load, [listId]);
+
+  const rename = async (name: string) => {
+    const before = list;
+    setList(l => (l ? { ...l, name } : l));
+    setError(null);
+    try {
+      setList(await todoListApi.rename(listId, name));
+    } catch (e) {
+      setList(before);
+      setError((e as Error).message);
+    }
+  };
+
+  const deleteList = async () => {
+    setError(null);
+    try {
+      await todoListApi.remove(listId);
+      navigate({ to: "/todos" });
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
   /** Apply a change locally right away; undo it if the request fails. */
   const optimistic = async (apply: (todos: Todo[]) => Todo[], request: () => Promise<void>) => {
@@ -83,20 +114,35 @@ export function TodosPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <h1 className="text-3xl font-bold">Todos</h1>
+      <Link
+        to="/todos"
+        activeOptions={{ exact: true }} // a back link, not "you are here"
+        className="flex w-fit items-center gap-1 rounded-sm text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ArrowLeft className="size-4" /> All lists
+      </Link>
 
-      <form onSubmit={add} className="flex gap-2">
-        <Input
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Add a todo…"
-          aria-label="New todo"
-          maxLength={TODO_TEXT_MAX}
-        />
-        <Button type="submit" disabled={!text.trim() || !todos}>
-          <Plus /> Add
-        </Button>
-      </form>
+      {list ? (
+        <ListHeader name={list.name} todoCount={todos?.length ?? 0} onRename={rename} onDelete={deleteList} />
+      ) : (
+        <h1 className="text-3xl font-bold text-muted-foreground">{error ? "Todo list" : "Loading…"}</h1>
+      )}
+
+      {/* Hidden when the list failed to load (e.g. it doesn't exist): there's nothing to add to. */}
+      {(list || !error) && (
+        <form onSubmit={add} className="flex gap-2">
+          <Input
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Add a todo…"
+            aria-label="New todo"
+            maxLength={TODO_TEXT_MAX}
+          />
+          <Button type="submit" disabled={!text.trim() || !todos}>
+            <Plus /> Add
+          </Button>
+        </form>
+      )}
 
       {error && (
         <div role="alert" className="flex items-center justify-between gap-2 rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive">

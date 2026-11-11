@@ -8,8 +8,29 @@ from pydantic.json_schema import SkipJsonSchema
 from ..core.models import ApiModel
 
 TODO_TEXT_MAX = 500
+TODO_LIST_NAME_MAX = 100
 
 TodoText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=TODO_TEXT_MAX)]
+TodoListName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=TODO_LIST_NAME_MAX)]
+
+
+class TodoList(ApiModel):
+    """A todo list as returned by the API, with counts of its todos."""
+
+    id: int
+    name: str
+    open_count: int
+    done_count: int
+    created_at: str
+    updated_at: str
+
+
+class TodoListCreate(ApiModel):
+    name: TodoListName
+
+
+class TodoListPatch(ApiModel):
+    name: TodoListName
 
 
 class Todo(ApiModel):

@@ -5,13 +5,13 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/todos": {
+    "/api/todo-lists": {
       "get": {
         "tags": [
           "todos"
         ],
-        "summary": "List Todos",
-        "operationId": "list_todos",
+        "summary": "List Todo Lists",
+        "operationId": "list_todo_lists",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -19,10 +19,10 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/Todo"
+                    "$ref": "#/components/schemas/TodoList"
                   },
                   "type": "array",
-                  "title": "Response List Todos"
+                  "title": "Response List Todo Lists"
                 }
               }
             }
@@ -43,17 +43,298 @@
         "tags": [
           "todos"
         ],
+        "summary": "Create Todo List",
+        "operationId": "create_todo_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoListCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todo-lists/{list_id}": {
+      "get": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Get Todo List",
+        "operationId": "get_todo_list",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo list not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Rename Todo List",
+        "operationId": "rename_todo_list",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoListPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo list not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "Delete Todo List",
+        "operationId": "delete_todo_list",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo list not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/todo-lists/{list_id}/todos": {
+      "get": {
+        "tags": [
+          "todos"
+        ],
+        "summary": "List Todos",
+        "operationId": "list_todos",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Todo"
+                  },
+                  "title": "Response List Todos"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo list not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "todos"
+        ],
         "summary": "Create Todo",
         "operationId": "create_todo",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TodoCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -85,26 +366,47 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Todo list not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/todos/reorder": {
+    "/api/todo-lists/{list_id}/todos/reorder": {
       "post": {
         "tags": [
           "todos"
         ],
         "summary": "Reorder Todos",
         "operationId": "reorder_todos",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReorderRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -112,10 +414,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Todo"
                   },
-                  "type": "array",
                   "title": "Response Reorder Todos"
                 }
               }
@@ -142,7 +444,7 @@
             }
           },
           "404": {
-            "description": "Todo not found",
+            "description": "Todo list or todo not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -154,7 +456,7 @@
         }
       }
     },
-    "/api/todos/{todo_id}": {
+    "/api/todo-lists/{list_id}/todos/{todo_id}": {
       "patch": {
         "tags": [
           "todos"
@@ -162,6 +464,15 @@
         "summary": "Update Todo",
         "operationId": "update_todo",
         "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          },
           {
             "name": "todo_id",
             "in": "path",
@@ -214,7 +525,7 @@
             }
           },
           "404": {
-            "description": "Todo not found",
+            "description": "Todo list or todo not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -232,6 +543,15 @@
         "summary": "Delete Todo",
         "operationId": "delete_todo",
         "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "List Id"
+            }
+          },
           {
             "name": "todo_id",
             "in": "path",
@@ -257,7 +577,7 @@
             }
           },
           "404": {
-            "description": "Todo not found",
+            "description": "Todo list or todo not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -352,6 +672,75 @@
           "text"
         ],
         "title": "TodoCreate"
+      },
+      "TodoList": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "openCount": {
+            "type": "integer",
+            "title": "Opencount"
+          },
+          "doneCount": {
+            "type": "integer",
+            "title": "Donecount"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "openCount",
+          "doneCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "TodoList",
+        "description": "A todo list as returned by the API, with counts of its todos."
+      },
+      "TodoListCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TodoListCreate"
+      },
+      "TodoListPatch": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TodoListPatch"
       },
       "TodoPatch": {
         "properties": {
