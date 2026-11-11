@@ -1,11 +1,12 @@
 """Todo API models. Class names become the frontend's TS type names, so keep them stable."""
 
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, StrictBool, StrictInt, StringConstraints, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
 from ..core.models import ApiModel
+from ..project.models import ProjectId
 from ..team.models import TeamId
 
 TODO_TEXT_MAX = 500
@@ -21,6 +22,10 @@ class TodoList(ApiModel):
     id: int
     name: str
     team_id: int | None  # None: not assigned to a team
+    project_id: int | None  # None: not in a project. Always in the project's team.
+    # "daily": one list per project per day, created by the server (see /api/projects/{id}/daily).
+    kind: Literal["standard", "daily"]
+    day: str | None  # YYYY-MM-DD for daily lists, else None
     open_count: int
     done_count: int
     created_at: str
@@ -28,22 +33,27 @@ class TodoList(ApiModel):
 
 
 class TodoListCreate(ApiModel):
+    """`projectId` puts the list in a project (and so in the project's team)."""
+
     name: TodoListName
     team_id: TeamId | None = None
+    project_id: ProjectId | None = None
 
 
 class TodoListPatch(ApiModel):
-    """Send `name` and/or `teamId`. `teamId: null` takes the list off its team."""
+    """Send `name`, `teamId` and/or `projectId`. `null` takes the list off its team / project.
+    Picking a project also moves the list to the project's team."""
 
     name: TodoListName | SkipJsonSchema[None] = None
     team_id: TeamId | None = None
+    project_id: ProjectId | None = None
 
     @model_validator(mode="after")
     def check_fields(self) -> Self:
         if "name" in self.model_fields_set and self.name is None:
             raise ValueError("`name` must not be null")
         if not self.model_fields_set:
-            raise ValueError("Nothing to update: send `name` and/or `teamId`")
+            raise ValueError("Nothing to update: send `name`, `teamId` and/or `projectId`")
         return self
 
 

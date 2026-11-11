@@ -1,29 +1,32 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { TODO_TEXT_MAX, type Team, type Todo, type TodoList, type TodoListPatch, type TodoPatch } from "@/api/client";
+import type { Project, Team, TodoList, TodoListPatch } from "@/api/client";
+import { projectApi } from "@/api/projects";
 import { teamApi } from "@/api/teams";
-import { todoApi as todoApiFor, todoListApi } from "@/api/todos";
+import { todoListApi } from "@/api/todos";
+import { TodoListView } from "@/components/todo-list/TodoListView";
+import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Plus } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
 import { ListHeader } from "./components/ListHeader";
-import { SortableSection } from "./components/SortableSection";
 
-/** One todo list. The route renders it with `key={listId}`, so state resets between lists. */
+/** One (standard) todo list. The route renders it with `key={listId}`, so state resets between lists. */
 export function TodoListPage({ listId }: { listId: number }) {
   const navigate = useNavigate();
-  const todoApi = todoApiFor(listId);
   const [list, setList] = useState<TodoList | null>(null);
   const [teams, setTeams] = useState<Team[] | null>(null);
-  const [todos, setTodos] = useState<Todo[] | null>(null);
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [todoCount, setTodoCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [text, setText] = useState("");
 
   const load = () => {
     setError(null);
-    Promise.all([todoListApi.get(listId), todoApi.list()]).then(([l, t]) => {
+    todoListApi.get(listId).then(l => {
+      // A daily list has its own page (no rename, team change or delete there).
+      if (l.kind === "daily" && l.projectId !== null && l.day) {
+        navigate({ to: "/projects/$projectId/daily/$day", params: { projectId: l.projectId, day: l.day }, replace: true });
+        return;
+      }
       setList(l);
-      setTodos(t);
     }, e => setError(e.message));
   };
   useEffect(load, [listId]);
@@ -32,10 +35,25 @@ export function TodoListPage({ listId }: { listId: number }) {
     teamApi.all().then(setTeams, e => setError(e.message));
   }, []);
 
+  // The project picker offers the list's team's projects.
+  const listTeamId = list?.teamId ?? null;
+  useEffect(() => {
+    setProjects(null);
+    if (listTeamId === null) return setProjects([]);
+    projectApi.forTeam(listTeamId).then(setProjects, e => setError(e.message));
+  }, [listTeamId]);
+
   /** Rename and/or move the list, showing the change right away. */
   const updateList = async (patch: TodoListPatch) => {
     const before = list;
-    setList(l => (l ? { ...l, ...patch } : l));
+    setList(l => {
+      if (!l) return l;
+      const next = { ...l, ...patch };
+      // Mirror the server: a project sets the team; changing team drops the project.
+      if (patch.projectId) next.teamId = projects?.find(p => p.id === patch.projectId)?.teamId ?? l.teamId;
+      if (patch.teamId !== undefined && patch.projectId === undefined && patch.teamId !== l.teamId) next.projectId = null;
+      return next;
+    });
     setError(null);
     try {
       setList(await todoListApi.update(listId, patch));
@@ -55,70 +73,6 @@ export function TodoListPage({ listId }: { listId: number }) {
     }
   };
 
-  /** Apply a change locally right away; undo it if the request fails. */
-  const optimistic = async (apply: (todos: Todo[]) => Todo[], request: () => Promise<void>) => {
-    const before = todos;
-    setTodos(t => (t ? apply(t) : t));
-    setError(null);
-    try {
-      await request();
-    } catch (e) {
-      setTodos(before);
-      setError((e as Error).message);
-    }
-  };
-
-  const add = (e: FormEvent) => {
-    e.preventDefault();
-    const value = text.trim();
-    if (!value) return;
-    setText("");
-    const tempId = -Date.now(); // placeholder until the server assigns a real id
-    const now = new Date().toISOString();
-    optimistic(
-      t => [...t, { id: tempId, text: value, done: false, createdAt: now, updatedAt: now }],
-      async () => {
-        const created = await todoApi.create(value);
-        setTodos(t => t?.map(todo => (todo.id === tempId ? created : todo)) ?? t);
-      },
-    );
-  };
-
-  const update = (id: number, patch: TodoPatch) =>
-    optimistic(
-      t => t.map(todo => (todo.id === id ? { ...todo, ...patch } : todo)),
-      async () => {
-        const saved = await todoApi.update(id, patch);
-        setTodos(t => t?.map(todo => (todo.id === id ? saved : todo)) ?? t);
-      },
-    );
-
-  const remove = (id: number) =>
-    optimistic(
-      t => t.filter(todo => todo.id !== id),
-      () => todoApi.remove(id),
-    );
-
-  /** `ids` is one section (open or completed) in its new order. */
-  const reorder = (ids: number[]) =>
-    optimistic(
-      t => {
-        const rank = new Map(ids.map((id, i) => [id, i]));
-        const sorted = t.filter(todo => rank.has(todo.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
-        let next = 0;
-        return t.map(todo => (rank.has(todo.id) ? sorted[next++]! : todo));
-      },
-      async () => {
-        // Unsaved (temporary) todos aren't on the server yet; they keep their place at the end.
-        await todoApi.reorder(ids.filter(id => id > 0));
-      },
-    );
-
-  const rowProps = { onUpdate: update, onRemove: remove, onReorder: reorder };
-
-  const open = todos?.filter(t => !t.done) ?? [];
-  const done = todos?.filter(t => t.done) ?? [];
-
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <Link
@@ -134,35 +88,22 @@ export function TodoListPage({ listId }: { listId: number }) {
           name={list.name}
           teamId={list.teamId}
           teams={teams}
-          todoCount={todos?.length ?? 0}
+          projectId={list.projectId}
+          projects={projects}
+          todoCount={todoCount}
           onRename={name => updateList({ name })}
           onMove={teamId => updateList({ teamId })}
+          onMoveToProject={projectId => updateList({ projectId })}
           onDelete={deleteList}
         />
       ) : (
         <h1 className="text-3xl font-bold text-muted-foreground">{error ? "Todo list" : "Loading…"}</h1>
       )}
 
-      {/* Hidden when the list failed to load (e.g. it doesn't exist): there's nothing to add to. */}
-      {(list || !error) && (
-        <form onSubmit={add} className="flex gap-2">
-          <Input
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Add a todo…"
-            aria-label="New todo"
-            maxLength={TODO_TEXT_MAX}
-          />
-          <Button type="submit" disabled={!text.trim() || !todos}>
-            <Plus /> Add
-          </Button>
-        </form>
-      )}
-
       {error && (
         <div role="alert" className="flex items-center justify-between gap-2 rounded-md border border-destructive/50 px-3 py-2 text-sm text-destructive">
           <span>{error}</span>
-          {!todos && (
+          {!list && (
             <Button variant="outline" size="sm" onClick={load}>
               Retry
             </Button>
@@ -170,23 +111,8 @@ export function TodoListPage({ listId }: { listId: number }) {
         </div>
       )}
 
-      {!todos ? (
-        !error && <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : todos.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Nothing to do yet.</p>
-      ) : (
-        <>
-          <SortableSection todos={open} {...rowProps} />
-          {done.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Completed ({done.length})
-              </h2>
-              <SortableSection todos={done} {...rowProps} />
-            </div>
-          )}
-        </>
-      )}
+      {/* Only once the list loaded: a missing list has nothing to add to. */}
+      {list && <TodoListView key={listId} listId={listId} onTodosChange={t => setTodoCount(t.length)} />}
     </div>
   );
 }

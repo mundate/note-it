@@ -131,8 +131,8 @@ def test_list_routes(client: TestClient) -> None:
     assert res.status_code == 201
     lst = res.json()
     assert lst["name"] == "Work"
-    assert set(lst) == {"id", "name", "teamId", "openCount", "doneCount", "createdAt", "updatedAt"}
-    assert lst["teamId"] is None
+    assert set(lst) == {"id", "name", "teamId", "projectId", "kind", "day", "openCount", "doneCount", "createdAt", "updatedAt"}
+    assert (lst["teamId"], lst["kind"], lst["day"]) == (None, "standard", None)
 
     lid = lst["id"]
     assert [l["id"] for l in client.get("/api/todo-lists").json()] == [lid]
@@ -143,7 +143,7 @@ def test_list_routes(client: TestClient) -> None:
     assert client.patch(f"/api/todo-lists/{lid}", json={"name": ""}).status_code == 400
     assert client.patch(f"/api/todo-lists/{lid}", json={"name": None}).status_code == 400
     assert client.patch(f"/api/todo-lists/{lid}", json={}).json() == {
-        "error": "Nothing to update: send `name` and/or `teamId`"
+        "error": "Nothing to update: send `name`, `teamId` and/or `projectId`"
     }
     assert client.patch("/api/todo-lists/999", json={"name": "x"}).status_code == 404
     assert client.patch(f"/api/todo-lists/{lid}", json={"name": "Job"}).json()["name"] == "Job"
@@ -220,7 +220,7 @@ def test_openapi_todo_schemas() -> None:
     )
     assert set(schemas["Todo"]["required"]) == {"id", "text", "done", "createdAt", "updatedAt"}
     assert set(schemas["TodoList"]["required"]) == {
-        "id", "name", "teamId", "openCount", "doneCount", "createdAt", "updatedAt"
+        "id", "name", "teamId", "projectId", "kind", "day", "openCount", "doneCount", "createdAt", "updatedAt"
     }
     patch = schemas["TodoPatch"]["properties"]
     assert patch["text"]["type"] == "string" and patch["done"]["type"] == "boolean"  # no `| null`

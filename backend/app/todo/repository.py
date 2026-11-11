@@ -1,6 +1,7 @@
 """Todo repository: the only place that knows about the `todo_lists` and `todos` tables."""
 
 import sqlite3
+from datetime import date
 
 from ..core.db import lock_for, transaction
 from .models import Todo, TodoList
@@ -28,6 +29,9 @@ def _to_list(row: sqlite3.Row) -> TodoList:
         id=row["id"],
         name=row["name"],
         team_id=row["team_id"],
+        project_id=row["project_id"],
+        kind=row["kind"],
+        day=row["day"],
         open_count=row["open_count"],
         done_count=row["done_count"],
         created_at=row["created_at"],
@@ -52,11 +56,22 @@ class TodoRepo:
 
     # ---------- lists ----------
 
-    def list_lists(self, team_id: int | None = None) -> list[TodoList]:
-        """All lists, or only one team's when `team_id` is given."""
-        where, args = ("WHERE l.team_id = ?", (team_id,)) if team_id is not None else ("", ())
+    def list_lists(self, team_id: int | None = None, project_id: int | None | Unset = UNSET) -> list[TodoList]:
+        """Standard lists (daily lists are left out), optionally filtered by team and/or
+        project; `project_id=None` means lists that aren't in a project."""
+        where, args = ["l.kind = 'standard'"], []
+        if team_id is not None:
+            where.append("l.team_id = ?")
+            args.append(team_id)
+        if project_id is None:
+            where.append("l.project_id IS NULL")
+        elif not isinstance(project_id, Unset):
+            where.append("l.project_id = ?")
+            args.append(project_id)
         with self._lock:
-            rows = self.db.execute(f"{LIST_SELECT} {where} ORDER BY l.position, l.id", args).fetchall()
+            rows = self.db.execute(
+                f"{LIST_SELECT} WHERE {' AND '.join(where)} ORDER BY l.position, l.id", args
+            ).fetchall()
         return [_to_list(r) for r in rows]
 
     def get_list(self, list_id: int) -> TodoList | None:
@@ -64,35 +79,107 @@ class TodoRepo:
             row = self.db.execute(f"{LIST_SELECT} WHERE l.id = ?", (list_id,)).fetchone()
         return _to_list(row) if row else None
 
-    def create_list(self, name: str, team_id: int | None = None) -> TodoList:
+    def create_list(self, name: str, team_id: int | None = None, project_id: int | None = None) -> TodoList:
         with self._lock:
             (list_id,) = self.db.execute(
-                """INSERT INTO todo_lists (name, team_id, position)
-                   VALUES (?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
+                """INSERT INTO todo_lists (name, team_id, project_id, position)
+                   VALUES (?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
                    RETURNING id""",
-                (name, team_id),
+                (name, team_id, project_id),
             ).fetchone()
         list_ = self.get_list(list_id)
         assert list_ is not None
         return list_
 
     def update_list(
-        self, list_id: int, *, name: str | None = None, team_id: int | None | Unset = UNSET
+        self,
+        list_id: int,
+        *,
+        name: str | None = None,
+        team_id: int | None | Unset = UNSET,
+        project_id: int | None | Unset = UNSET,
     ) -> TodoList | None:
-        """Changes the given fields (`team_id=None` takes the list off its team). Returns the
+        """Changes the given fields (None takes the list off its team / project). Returns the
         updated list, or None if it doesn't exist."""
         sets, args = [f"updated_at = {NOW}"], []
         if name is not None:
             sets.append("name = ?")
             args.append(name)
-        if not isinstance(team_id, Unset):
-            sets.append("team_id = ?")
-            args.append(team_id)
+        for column, value in (("team_id", team_id), ("project_id", project_id)):
+            if not isinstance(value, Unset):
+                sets.append(f"{column} = ?")
+                args.append(value)
         with self._lock:
             changed = self.db.execute(
                 f"UPDATE todo_lists SET {', '.join(sets)} WHERE id = ?", (*args, list_id)
             ).rowcount
         return self.get_list(list_id) if changed else None
+
+    # ---------- daily lists (one per project per day) ----------
+
+    def list_daily(self, project_id: int) -> list[TodoList]:
+        """A project's daily lists, newest day first."""
+        with self._lock:
+            rows = self.db.execute(
+                f"{LIST_SELECT} WHERE l.kind = 'daily' AND l.project_id = ? ORDER BY l.day DESC", (project_id,)
+            ).fetchall()
+        return [_to_list(r) for r in rows]
+
+    def open_daily(self, project_id: int, team_id: int | None, day: date, name: str) -> TodoList:
+        """Gets (or creates) the project's daily list for `day`, then moves every unfinished
+        todo from the project's earlier daily lists onto it, oldest day first, after its own
+        todos. Runs on every open, so earlier days only ever keep finished todos."""
+        iso = day.isoformat()
+        with self._lock, transaction(self.db):
+            row = self.db.execute(
+                "SELECT id FROM todo_lists WHERE kind = 'daily' AND project_id = ? AND day = ?", (project_id, iso)
+            ).fetchone()
+            if row:
+                list_id = row["id"]
+            else:
+                (list_id,) = self.db.execute(
+                    """INSERT INTO todo_lists (name, team_id, project_id, kind, day, position)
+                       VALUES (?, ?, ?, 'daily', ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM todo_lists))
+                       RETURNING id""",
+                    (name, team_id, project_id, iso),
+                ).fetchone()
+
+            carried = self.db.execute(
+                """SELECT t.id FROM todos t JOIN todo_lists l ON l.id = t.list_id
+                   WHERE l.kind = 'daily' AND l.project_id = ? AND l.day < ? AND t.done = 0
+                   ORDER BY l.day, t.position, t.id""",
+                (project_id, iso),
+            ).fetchall()
+            if carried:
+                (start,) = self.db.execute(
+                    "SELECT COALESCE(MAX(position), -1) + 1 FROM todos WHERE list_id = ?", (list_id,)
+                ).fetchone()
+                self.db.executemany(
+                    "UPDATE todos SET list_id = ?, position = ? WHERE id = ?",
+                    [(list_id, start + i, r["id"]) for i, r in enumerate(carried)],
+                )
+            row = self.db.execute(f"{LIST_SELECT} WHERE l.id = ?", (list_id,)).fetchone()
+        return _to_list(row)
+
+    def team_daily_days(self, team_id: int) -> list[str]:
+        """Days that have a daily list in any of the team's projects, newest first."""
+        with self._lock:
+            rows = self.db.execute(
+                "SELECT DISTINCT day FROM todo_lists WHERE kind = 'daily' AND team_id = ? ORDER BY day DESC",
+                (team_id,),
+            ).fetchall()
+        return [r["day"] for r in rows]
+
+    def team_daily_lists(self, team_id: int, day: date) -> list[TodoList]:
+        """That day's daily lists across the team's projects, in project order."""
+        with self._lock:
+            rows = self.db.execute(
+                f"""{LIST_SELECT} JOIN projects p ON p.id = l.project_id
+                    WHERE l.kind = 'daily' AND l.team_id = ? AND l.day = ?
+                    ORDER BY p.status = 'done', p.position, p.id""",
+                (team_id, day.isoformat()),
+            ).fetchall()
+        return [_to_list(r) for r in rows]
 
     def delete_list(self, list_id: int) -> bool:
         """Deletes the list and its todos. Returns False if the list didn't exist."""

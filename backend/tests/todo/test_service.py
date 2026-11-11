@@ -2,16 +2,13 @@
 
 import pytest
 
-from app.core.db import open_db
 from app.core.exceptions import NotFoundError
-from app.team import TeamRepo, TeamService
-from app.todo import TodoRepo, TodoService
+from app.todo import TodoService
 
 
 @pytest.fixture
-def service() -> TodoService:
-    db = open_db(":memory:")
-    return TodoService(TodoRepo(db), TeamService(TeamRepo(db)))
+def service(svc) -> TodoService:  # noqa: ANN001
+    return svc.todos
 
 
 def test_list_lifecycle(service: TodoService) -> None:

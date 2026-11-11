@@ -2,7 +2,7 @@ import { Placeholder } from "@/components/Placeholder";
 import { TeamPage } from "@/pages/team/TeamPage";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/teams/$teamId")({
+export const Route = createFileRoute("/teams/$teamId/")({
   params: {
     parse: ({ teamId }) => ({ teamId: Number(teamId) }),
     stringify: ({ teamId }) => ({ teamId: String(teamId) }),

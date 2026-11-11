@@ -1,6 +1,8 @@
-import { TEAM_NAME_MAX, type Team, type TodoList } from "@/api/client";
+import { TEAM_NAME_MAX, type Project, type Team, type TodoList } from "@/api/client";
+import { projectApi } from "@/api/projects";
 import { teamApi } from "@/api/teams";
 import { todoListApi } from "@/api/todos";
+import { ProjectLink } from "@/components/ProjectLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "@tanstack/react-router";
@@ -13,15 +15,17 @@ export function TeamsPage() {
   const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [lists, setLists] = useState<TodoList[] | null>(null);
+  const [teamless, setTeamless] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
 
   const load = () => {
     setError(null);
-    Promise.all([teamApi.all(), todoListApi.all()]).then(([t, l]) => {
+    Promise.all([teamApi.all(), todoListApi.all(), projectApi.teamless()]).then(([t, l, p]) => {
       setTeams(t);
       setLists(l);
+      setTeamless(p);
     }, e => setError(e.message));
   };
   useEffect(load, []);
@@ -48,7 +52,7 @@ export function TeamsPage() {
       <div>
         <h1 className="text-3xl font-bold">Teams</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Assign todo lists to a team. Teams are optional: lists work fine without one.
+          Teams hold projects and todo lists. They're optional: lists work fine without one.
         </p>
       </div>
 
@@ -88,6 +92,22 @@ export function TeamsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {teamless.length > 0 && (
+        <section className="mt-4 flex flex-col gap-2" aria-label="Projects without a team">
+          <div>
+            <h2 className="text-lg font-semibold">Projects without a team</h2>
+            <p className="text-sm text-muted-foreground">Their team was deleted. Give one a team from its page.</p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {teamless.map(p => (
+              <li key={p.id}>
+                <ProjectLink project={p} listCount={lists?.filter(l => l.projectId === p.id).length ?? 0} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

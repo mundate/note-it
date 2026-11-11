@@ -5,17 +5,17 @@ const list = (listId: number) => ({ params: { path: { list_id: listId } } });
 const todo = (listId: number, todoId: number) => ({ params: { path: { list_id: listId, todo_id: todoId } } });
 
 export const todoListApi = {
-  /** All lists, or only one team's. */
-  all: async (teamId?: number): Promise<TodoList[]> =>
-    unwrap(await client.GET("/api/todo-lists", { params: { query: teamId === undefined ? {} : { teamId } } })),
+  /** Standard lists, optionally one team's and/or one project's (`noProject`: lists not in a project). */
+  all: async (filter: { teamId?: number; projectId?: number; noProject?: boolean } = {}): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/todo-lists", { params: { query: filter } })),
 
   get: async (listId: number): Promise<TodoList> => unwrap(await client.GET("/api/todo-lists/{list_id}", list(listId))),
 
-  /** `teamId` assigns the new list to a team. */
-  create: async (name: string, teamId: number | null = null): Promise<TodoList> =>
-    unwrap(await client.POST("/api/todo-lists", { body: { name, teamId } })),
+  /** `projectId` puts the new list in a project (and so in its team); `teamId` just in a team. */
+  create: async (name: string, place: { teamId?: number | null; projectId?: number | null } = {}): Promise<TodoList> =>
+    unwrap(await client.POST("/api/todo-lists", { body: { name, ...place } })),
 
-  /** Rename the list and/or move it to a team. `teamId: null` takes it off its team. */
+  /** Rename and/or move the list. `null` takes it off its team / project; a project also sets the team. */
   update: async (listId: number, patch: TodoListPatch): Promise<TodoList> =>
     unwrap(await client.PATCH("/api/todo-lists/{list_id}", { ...list(listId), body: patch })),
 
@@ -45,3 +45,28 @@ export function todoApi(listId: number) {
       unwrap(await client.POST("/api/todo-lists/{list_id}/todos/reorder", { ...list(listId), body: { ids } })),
   };
 }
+
+/**
+ * Daily lists: one per project per day (opt-in per project). Opening today creates it and
+ * moves unfinished todos from earlier days onto it. A team's view combines its projects'.
+ */
+export const dailyApi = {
+  /** The project's daily lists, newest day first. */
+  projectDays: async (projectId: number): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/projects/{project_id}/daily", { params: { path: { project_id: projectId } } })),
+
+  openProjectToday: async (projectId: number): Promise<TodoList> =>
+    unwrap(await client.POST("/api/projects/{project_id}/daily/today", { params: { path: { project_id: projectId } } })),
+
+  /** Days with a daily list in any of the team's projects, newest first. */
+  teamDays: async (teamId: number): Promise<string[]> =>
+    unwrap(await client.GET("/api/teams/{team_id}/daily/days", { params: { path: { team_id: teamId } } })),
+
+  /** That day's daily lists across the team's projects. */
+  teamDay: async (teamId: number, day: string): Promise<TodoList[]> =>
+    unwrap(await client.GET("/api/teams/{team_id}/daily/{day}", { params: { path: { team_id: teamId, day } } })),
+
+  /** Today's daily lists for the team's active projects with daily turned on. */
+  openTeamToday: async (teamId: number): Promise<TodoList[]> =>
+    unwrap(await client.POST("/api/teams/{team_id}/daily/today", { params: { path: { team_id: teamId } } })),
+};

@@ -1,7 +1,8 @@
-import { TODO_LIST_NAME_MAX, type Team, type TodoList } from "@/api/client";
+import { TODO_LIST_NAME_MAX, type Project, type Team, type TodoList } from "@/api/client";
+import { projectApi } from "@/api/projects";
 import { teamApi } from "@/api/teams";
 import { todoListApi } from "@/api/todos";
-import { TeamSelect } from "@/components/TeamSelect";
+import { NullableSelect } from "@/components/NullableSelect";
 import { TodoListLink } from "@/components/TodoListLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ export function TodoListsPage() {
   const navigate = useNavigate();
   const [lists, setLists] = useState<TodoList[] | null>(null);
   const [teams, setTeams] = useState<Team[] | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [teamId, setTeamId] = useState<number | null>(null);
@@ -21,14 +23,26 @@ export function TodoListsPage() {
 
   const load = () => {
     setError(null);
-    Promise.all([todoListApi.all(), teamApi.all()]).then(([l, t]) => {
-      setLists(l);
-      setTeams(t);
-    }, e => setError(e.message));
+    Promise.all([todoListApi.all(), teamApi.all(), projectApi.teamless()])
+      .then(async ([l, t, teamless]) => {
+        // Project names for the labels: only the teams that have lists need fetching.
+        const teamIds = [...new Set(l.map(x => x.teamId).filter((id): id is number => id !== null))];
+        const perTeam = await Promise.all(teamIds.map(id => projectApi.forTeam(id)));
+        setLists(l);
+        setTeams(t);
+        setProjects([...perTeam.flat(), ...teamless]);
+      })
+      .catch(e => setError(e.message));
   };
   useEffect(load, []);
 
   const teamNames = useMemo(() => new Map(teams?.map(t => [t.id, t.name])), [teams]);
+  const projectNames = useMemo(() => new Map(projects.map(p => [p.id, p.name])), [projects]);
+  /** "Team · Project", "Team", "Project" or nothing. */
+  const label = (list: TodoList) =>
+    [list.teamId !== null && teamNames.get(list.teamId), list.projectId !== null && projectNames.get(list.projectId)]
+      .filter(Boolean)
+      .join(" · ") || undefined;
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
@@ -37,7 +51,7 @@ export function TodoListsPage() {
     setCreating(true);
     setError(null);
     try {
-      const created = await todoListApi.create(value, teamId);
+      const created = await todoListApi.create(value, { teamId });
       navigate({ to: "/todos/$listId", params: { listId: created.id } });
     } catch (e) {
       setError((e as Error).message);
@@ -57,7 +71,9 @@ export function TodoListsPage() {
           aria-label="New list name"
           maxLength={TODO_LIST_NAME_MAX}
         />
-        {teams && teams.length > 0 && <TeamSelect teams={teams} value={teamId} onChange={setTeamId} />}
+        {teams && teams.length > 0 && (
+          <NullableSelect items={teams} value={teamId} onChange={setTeamId} noneLabel="No team" label="Team" />
+        )}
         <Button type="submit" disabled={!name.trim() || creating || !lists}>
           <Plus /> Create list
         </Button>
@@ -82,7 +98,7 @@ export function TodoListsPage() {
         <ul className="flex flex-col gap-2">
           {lists.map(list => (
             <li key={list.id}>
-              <TodoListLink list={list} teamName={list.teamId === null ? undefined : teamNames.get(list.teamId)} />
+              <TodoListLink list={list} label={label(list)} />
             </li>
           ))}
         </ul>

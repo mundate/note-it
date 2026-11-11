@@ -14,9 +14,14 @@ import { Route as DiagramsRouteImport } from "./routes/diagrams"
 import { Route as NotesRouteImport } from "./routes/notes"
 import { Route as SettingsRouteImport } from "./routes/settings"
 import { Route as TeamsIndexRouteImport } from "./routes/teams/index"
-import { Route as TeamsTeamIdRouteImport } from "./routes/teams/$teamId"
 import { Route as TodosIndexRouteImport } from "./routes/todos/index"
 import { Route as TodosListIdRouteImport } from "./routes/todos/$listId"
+import { Route as ProjectsProjectIdIndexRouteImport } from "./routes/projects/$projectId.index"
+import { Route as TeamsTeamIdIndexRouteImport } from "./routes/teams/$teamId.index"
+import { Route as ProjectsProjectIdDailyIndexRouteImport } from "./routes/projects/$projectId.daily.index"
+import { Route as ProjectsProjectIdDailyDayRouteImport } from "./routes/projects/$projectId.daily.$day"
+import { Route as TeamsTeamIdDailyIndexRouteImport } from "./routes/teams/$teamId.daily.index"
+import { Route as TeamsTeamIdDailyDayRouteImport } from "./routes/teams/$teamId.daily.$day"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -43,11 +48,6 @@ const TeamsIndexRoute = TeamsIndexRouteImport.update({
   path: "/teams/",
   getParentRoute: () => rootRouteImport,
 } as any)
-const TeamsTeamIdRoute = TeamsTeamIdRouteImport.update({
-  id: "/teams/$teamId",
-  path: "/teams/$teamId",
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TodosIndexRoute = TodosIndexRouteImport.update({
   id: "/todos/",
   path: "/todos/",
@@ -58,26 +58,68 @@ const TodosListIdRoute = TodosListIdRouteImport.update({
   path: "/todos/$listId",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexRouteImport.update({
+  id: "/projects/$projectId/",
+  path: "/projects/$projectId/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdIndexRoute = TeamsTeamIdIndexRouteImport.update({
+  id: "/teams/$teamId/",
+  path: "/teams/$teamId/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsProjectIdDailyIndexRoute =
+  ProjectsProjectIdDailyIndexRouteImport.update({
+    id: "/projects/$projectId/daily/",
+    path: "/projects/$projectId/daily/",
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ProjectsProjectIdDailyDayRoute =
+  ProjectsProjectIdDailyDayRouteImport.update({
+    id: "/projects/$projectId/daily/$day",
+    path: "/projects/$projectId/daily/$day",
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const TeamsTeamIdDailyIndexRoute = TeamsTeamIdDailyIndexRouteImport.update({
+  id: "/teams/$teamId/daily/",
+  path: "/teams/$teamId/daily/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdDailyDayRoute = TeamsTeamIdDailyDayRouteImport.update({
+  id: "/teams/$teamId/daily/$day",
+  path: "/teams/$teamId/daily/$day",
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
   "/teams/": typeof TeamsIndexRoute
   "/todos/": typeof TodosIndexRoute
+  "/projects/$projectId/": typeof ProjectsProjectIdIndexRoute
+  "/teams/$teamId/": typeof TeamsTeamIdIndexRoute
+  "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/projects/$projectId/daily/": typeof ProjectsProjectIdDailyIndexRoute
+  "/teams/$teamId/daily/": typeof TeamsTeamIdDailyIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
   "/teams": typeof TeamsIndexRoute
   "/todos": typeof TodosIndexRoute
+  "/projects/$projectId": typeof ProjectsProjectIdIndexRoute
+  "/teams/$teamId": typeof TeamsTeamIdIndexRoute
+  "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/projects/$projectId/daily": typeof ProjectsProjectIdDailyIndexRoute
+  "/teams/$teamId/daily": typeof TeamsTeamIdDailyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,10 +127,15 @@ export interface FileRoutesById {
   "/diagrams": typeof DiagramsRoute
   "/notes": typeof NotesRoute
   "/settings": typeof SettingsRoute
-  "/teams/$teamId": typeof TeamsTeamIdRoute
   "/todos/$listId": typeof TodosListIdRoute
   "/teams/": typeof TeamsIndexRoute
   "/todos/": typeof TodosIndexRoute
+  "/projects/$projectId/": typeof ProjectsProjectIdIndexRoute
+  "/teams/$teamId/": typeof TeamsTeamIdIndexRoute
+  "/projects/$projectId/daily/$day": typeof ProjectsProjectIdDailyDayRoute
+  "/teams/$teamId/daily/$day": typeof TeamsTeamIdDailyDayRoute
+  "/projects/$projectId/daily/": typeof ProjectsProjectIdDailyIndexRoute
+  "/teams/$teamId/daily/": typeof TeamsTeamIdDailyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,30 +144,45 @@ export interface FileRouteTypes {
     | "/diagrams"
     | "/notes"
     | "/settings"
-    | "/teams/$teamId"
     | "/todos/$listId"
     | "/teams/"
     | "/todos/"
+    | "/projects/$projectId/"
+    | "/teams/$teamId/"
+    | "/projects/$projectId/daily/$day"
+    | "/teams/$teamId/daily/$day"
+    | "/projects/$projectId/daily/"
+    | "/teams/$teamId/daily/"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
     | "/diagrams"
     | "/notes"
     | "/settings"
-    | "/teams/$teamId"
     | "/todos/$listId"
     | "/teams"
     | "/todos"
+    | "/projects/$projectId"
+    | "/teams/$teamId"
+    | "/projects/$projectId/daily/$day"
+    | "/teams/$teamId/daily/$day"
+    | "/projects/$projectId/daily"
+    | "/teams/$teamId/daily"
   id:
     | "__root__"
     | "/"
     | "/diagrams"
     | "/notes"
     | "/settings"
-    | "/teams/$teamId"
     | "/todos/$listId"
     | "/teams/"
     | "/todos/"
+    | "/projects/$projectId/"
+    | "/teams/$teamId/"
+    | "/projects/$projectId/daily/$day"
+    | "/teams/$teamId/daily/$day"
+    | "/projects/$projectId/daily/"
+    | "/teams/$teamId/daily/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,10 +190,15 @@ export interface RootRouteChildren {
   DiagramsRoute: typeof DiagramsRoute
   NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
-  TeamsTeamIdRoute: typeof TeamsTeamIdRoute
   TodosListIdRoute: typeof TodosListIdRoute
   TeamsIndexRoute: typeof TeamsIndexRoute
   TodosIndexRoute: typeof TodosIndexRoute
+  ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
+  TeamsTeamIdIndexRoute: typeof TeamsTeamIdIndexRoute
+  ProjectsProjectIdDailyDayRoute: typeof ProjectsProjectIdDailyDayRoute
+  TeamsTeamIdDailyDayRoute: typeof TeamsTeamIdDailyDayRoute
+  ProjectsProjectIdDailyIndexRoute: typeof ProjectsProjectIdDailyIndexRoute
+  TeamsTeamIdDailyIndexRoute: typeof TeamsTeamIdDailyIndexRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -171,13 +238,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TeamsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/teams/$teamId": {
-      id: "/teams/$teamId"
-      path: "/teams/$teamId"
-      fullPath: "/teams/$teamId"
-      preLoaderRoute: typeof TeamsTeamIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     "/todos/": {
       id: "/todos/"
       path: "/todos"
@@ -192,6 +252,48 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TodosListIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/projects/$projectId/": {
+      id: "/projects/$projectId/"
+      path: "/projects/$projectId"
+      fullPath: "/projects/$projectId/"
+      preLoaderRoute: typeof ProjectsProjectIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId/": {
+      id: "/teams/$teamId/"
+      path: "/teams/$teamId"
+      fullPath: "/teams/$teamId/"
+      preLoaderRoute: typeof TeamsTeamIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/projects/$projectId/daily/": {
+      id: "/projects/$projectId/daily/"
+      path: "/projects/$projectId/daily"
+      fullPath: "/projects/$projectId/daily/"
+      preLoaderRoute: typeof ProjectsProjectIdDailyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/projects/$projectId/daily/$day": {
+      id: "/projects/$projectId/daily/$day"
+      path: "/projects/$projectId/daily/$day"
+      fullPath: "/projects/$projectId/daily/$day"
+      preLoaderRoute: typeof ProjectsProjectIdDailyDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId/daily/": {
+      id: "/teams/$teamId/daily/"
+      path: "/teams/$teamId/daily"
+      fullPath: "/teams/$teamId/daily/"
+      preLoaderRoute: typeof TeamsTeamIdDailyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/teams/$teamId/daily/$day": {
+      id: "/teams/$teamId/daily/$day"
+      path: "/teams/$teamId/daily/$day"
+      fullPath: "/teams/$teamId/daily/$day"
+      preLoaderRoute: typeof TeamsTeamIdDailyDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -200,10 +302,15 @@ const rootRouteChildren: RootRouteChildren = {
   DiagramsRoute: DiagramsRoute,
   NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
-  TeamsTeamIdRoute: TeamsTeamIdRoute,
   TodosListIdRoute: TodosListIdRoute,
   TeamsIndexRoute: TeamsIndexRoute,
   TodosIndexRoute: TodosIndexRoute,
+  ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
+  TeamsTeamIdIndexRoute: TeamsTeamIdIndexRoute,
+  ProjectsProjectIdDailyDayRoute: ProjectsProjectIdDailyDayRoute,
+  TeamsTeamIdDailyDayRoute: TeamsTeamIdDailyDayRoute,
+  ProjectsProjectIdDailyIndexRoute: ProjectsProjectIdDailyIndexRoute,
+  TeamsTeamIdDailyIndexRoute: TeamsTeamIdDailyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

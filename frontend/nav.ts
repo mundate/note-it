@@ -11,9 +11,9 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Home", icon: House },
-  { to: "/notes", label: "Notes", icon: NotebookPen, description: "Write and organize notes." },
-  { to: "/todos", label: "Todo Lists", icon: ListTodo, description: "Track daily, sprint and timeless todos." },
-  { to: "/diagrams", label: "Diagrams", icon: Network, description: "Sketch ideas and flows." },
   { to: "/teams", label: "Teams", icon: Users, description: "Share lists, notes and diagrams with a team." },
+  { to: "/todos", label: "Todo Lists", icon: ListTodo, description: "Track daily, sprint and timeless todos." },
+  { to: "/notes", label: "Notes", icon: NotebookPen, description: "Write and organize notes." },
+  { to: "/diagrams", label: "Diagrams", icon: Network, description: "Sketch ideas and flows." },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

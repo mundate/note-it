@@ -10,6 +10,8 @@ export const client = createClient<paths>({ baseUrl: "/" });
 
 type Schemas = components["schemas"];
 export type Team = Schemas["Team"];
+export type Project = Schemas["Project"];
+export type ProjectPatch = Schemas["ProjectPatch"];
 export type TodoList = Schemas["TodoList"];
 export type TodoListPatch = Schemas["TodoListPatch"];
 export type Todo = Schemas["Todo"];
@@ -30,3 +32,5 @@ export function unwrap<T>(result: { data?: T; error?: ErrorResponse | unknown; r
 export const TODO_TEXT_MAX: number = spec.components.schemas.TodoCreate.properties.text.maxLength;
 export const TODO_LIST_NAME_MAX: number = spec.components.schemas.TodoListCreate.properties.name.maxLength;
 export const TEAM_NAME_MAX: number = spec.components.schemas.TeamCreate.properties.name.maxLength;
+export const PROJECT_NAME_MAX: number = spec.components.schemas.ProjectCreate.properties.name.maxLength;
+export const PROJECT_DESCRIPTION_MAX: number = spec.components.schemas.ProjectCreate.properties.description.maxLength;

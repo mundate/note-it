@@ -1,28 +1,17 @@
 """Assigning todo lists to teams: optional, movable, and kept when a team is deleted."""
 
-from collections.abc import Iterator
-
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.db import open_db
 from app.core.exceptions import NotFoundError
 from app.main import create_app
-from app.team import TeamRepo, TeamService
-from app.todo import TodoRepo, TodoService
+from app.team import TeamService
+from app.todo import TodoService
 
 
 @pytest.fixture
-def services() -> tuple[TodoService, TeamService]:
-    db = open_db(":memory:")
-    teams = TeamService(TeamRepo(db))
-    return TodoService(TodoRepo(db), teams), teams
-
-
-@pytest.fixture
-def client() -> Iterator[TestClient]:
-    with TestClient(create_app(":memory:")) as c:
-        yield c
+def services(svc) -> tuple[TodoService, TeamService]:  # noqa: ANN001
+    return svc.todos, svc.teams
 
 
 def test_lists_move_between_teams(services: tuple[TodoService, TeamService]) -> None:

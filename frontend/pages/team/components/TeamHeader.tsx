@@ -7,18 +7,22 @@ import { Trash2 } from "lucide-react";
 export function TeamHeader({
   name,
   listCount,
+  projectCount,
   onRename,
   onDelete,
 }: {
   name: string;
   listCount: number;
+  projectCount: number;
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
   const confirmDelete = () => {
-    const kept = listCount
-      ? ` Its ${listCount === 1 ? "todo list" : `${listCount} todo lists`} will be kept, without a team.`
-      : "";
+    const things = [
+      projectCount && (projectCount === 1 ? "1 project" : `${projectCount} projects`),
+      listCount && (listCount === 1 ? "1 todo list" : `${listCount} todo lists`),
+    ].filter(Boolean);
+    const kept = things.length ? ` Its ${things.join(" and ")} will be kept, without a team.` : "";
     if (window.confirm(`Delete the team "${name}"?${kept}`)) onDelete();
   };
 
